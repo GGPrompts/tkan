@@ -64,6 +64,22 @@ type Model struct {
 
 	// Keyboard/Mouse state
 	ready bool
+
+	// Mouse drag state (Solitaire pattern)
+	draggingCard   *Card // Card currently being dragged
+	dragFromColumn int   // Which column the drag started from
+	dragFromIndex  int   // Card index in the source column
+	mousePressX    int   // X position where mouse was pressed
+	mousePressY    int   // Y position where mouse was pressed
+
+	// Drop target tracking (for visual feedback)
+	dropTargetColumn int // Column where card would be dropped (-1 if none)
+	dropTargetIndex  int // Position where card would be inserted
+
+	// Double-click detection
+	lastClickTime time.Time
+	lastClickX    int
+	lastClickY    int
 }
 
 // Project represents a discovered project with a .tkan.yaml file

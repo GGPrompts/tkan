@@ -97,6 +97,20 @@ var (
 				Bold(true).
 				Padding(0, 1)
 
+	// Drop indicator style (thin line showing where card will be dropped)
+	styleDropIndicator = lipgloss.NewStyle().
+				Foreground(colorSuccess).
+				Bold(true)
+
+	// Ghost card style (for card being dragged)
+	styleCardGhost = lipgloss.NewStyle().
+			Width(cardWidth).
+			Height(cardHeight).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(colorSubdued).
+			Foreground(colorSubdued).
+			Padding(0, 1)
+
 	// Card content style (for text inside cards)
 	styleCardContent = lipgloss.NewStyle().
 				Width(cardWidth - 2). // Account for padding
@@ -139,8 +153,20 @@ var (
 //   │here      │
 //   └──────────┘
 func renderCard(title string, selected bool) string {
+	return renderCardWithStyle(title, selected, false)
+}
+
+// renderCardGhost renders a faded ghost card (for dragging)
+func renderCardGhost(title string) string {
+	return renderCardWithStyle(title, false, true)
+}
+
+// renderCardWithStyle renders a card with the given title and style options
+func renderCardWithStyle(title string, selected bool, ghost bool) string {
 	style := styleCard
-	if selected {
+	if ghost {
+		style = styleCardGhost
+	} else if selected {
 		style = styleCardSelected
 	}
 
@@ -155,7 +181,20 @@ func renderCard(title string, selected bool) string {
 // This creates the Solitaire-style cascading effect
 func renderCardTopLines(title string, selected bool) string {
 	// Render full card first
-	fullCard := renderCard(title, selected)
+	fullCard := renderCardWithStyle(title, selected, false)
+
+	// Extract just the top 2 lines
+	lines := strings.Split(fullCard, "\n")
+	if len(lines) >= 2 {
+		return lines[0] + "\n" + lines[1]
+	}
+	return fullCard
+}
+
+// renderCardTopLinesGhost renders just the top 2 lines of a ghost card
+func renderCardTopLinesGhost(title string) string {
+	// Render full ghost card first
+	fullCard := renderCardGhost(title)
 
 	// Extract just the top 2 lines
 	lines := strings.Split(fullCard, "\n")

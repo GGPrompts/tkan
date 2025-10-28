@@ -342,38 +342,39 @@ settings:
 
 **Deliverable**: ✅ Can view a board with hardcoded cards (and much more!)
 
-### Phase 2: Board View - Drag System (Week 2) 🚧 **NEXT**
+### Phase 2: Drag & Drop System (Week 2) ✅ **COMPLETED - 2025-10-28**
 
-**Goal**: Implement Solitaire-style card dragging
+**Goal**: Implement Solitaire-style card dragging with visual feedback
 
-**Pattern from Solitaire** (update_mouse.go):
-```go
-// On press: track position + prepare drag
-m.mousePressX, m.mousePressY = msg.X, msg.Y
-m.draggingCard = card
-m.dragFromColumn = columnIdx
-m.dragFromIndex = cardIdx
+**What We Built**:
+- ✅ Full drag & drop functionality (move cards between columns)
+- ✅ Card reordering within same column (prioritize backlog/todo)
+- ✅ Visual drop indicator (green line shows exact drop position)
+- ✅ Ghost card effect (dragged card appears faded at source)
+- ✅ Live position tracking (indicator moves during drag)
+- ✅ Smart insertion logic (hover top/bottom half to insert before/after)
+- ✅ Empty column support (can drop into columns with no cards)
+- ✅ Auto-save on card move (updates .tkan.yaml immediately)
 
-// On release: distance check
-dx := msg.X - m.mousePressX
-dy := msg.Y - m.mousePressY
-if dx*dx + dy*dy < 4 {
-    // Click (select card)
-} else {
-    // Drag (move card to new column)
-    toCol := m.getColumnAtPosition(msg.X, msg.Y)
-    m.moveCard(fromCol, toCol, card)
-}
-```
+**Implementation Details**:
+- `getColumnAtPosition(x, y)` - Maps mouse X/Y to column index
+- `getDropPosition(x, y)` - Returns column + insertion index
+- `getInsertIndexInColumn()` - Calculates precise position based on card hover
+- `moveCard()` - Handles both cross-column moves and same-column reordering
+- `handleMouseMotion()` - Updates drop target on drag (both MouseButtonLeft and MouseButtonNone)
+- Ghost rendering with `styleCardGhost` (subdued colors)
+- Drop indicator with `styleDropIndicator` (green horizontal line)
 
-**Tasks:**
-1. Implement `getColumnAtPosition(x, y)` coordinate mapping
-2. Add mouse press handler (track press position)
-3. Add mouse release handler (distance calculation)
-4. Implement `moveCard()` logic
-5. Add visual feedback during drag (highlight drop zone)
+**Key Fix**: Fixed DONE column bug - coordinate mapping now checks `x < m.boardWidth`
 
-**Deliverable**: Can drag cards between columns with mouse
+**Files Modified**:
+- types.go (added drag state fields)
+- model.go (coordinate mapping + moveCard logic)
+- update_mouse.go (press/release/motion handlers)
+- view.go (ghost rendering + drop indicator)
+- styles.go (ghost card + drop indicator styles)
+
+**Deliverable**: ✅ Full drag & drop with visual feedback and card reordering
 
 ### Phase 3: Table View (Week 3) 📅 **PLANNED**
 

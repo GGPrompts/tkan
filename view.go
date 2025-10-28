@@ -145,19 +145,26 @@ func (m Model) renderColumns(contentHeight int) string {
 
 // renderColumn renders a single column with its cards using Solitaire-style stacking
 func (m Model) renderColumn(col Column, colIndex int, contentHeight int, colWidth int) string {
+	var columnContent strings.Builder
+
+	// Check if we should show drop indicator in this column
+	showDropIndicator := m.draggingCard != nil && m.dropTargetColumn == colIndex
+
+	// Empty column
 	if len(col.Cards) == 0 {
-		// Empty column - show placeholder
+		if showDropIndicator && m.dropTargetIndex == 0 {
+			// Show drop indicator at top of empty column
+			dropLine := strings.Repeat("─", cardWidth)
+			columnContent.WriteString(styleDropIndicator.Render(dropLine) + "\n")
+		}
+
 		return lipgloss.NewStyle().
 			Width(colWidth).
 			Height(contentHeight).
-			Render("")
+			Render(columnContent.String())
 	}
 
-	var columnContent strings.Builder
-
 	// Calculate how many cards we can show with stacking
-	// Each stacked card takes 2 lines, last card takes 5 lines
-	// Available height determines max cards
 	maxStackedCards := (contentHeight - cardHeight) / 2
 	if maxStackedCards < 0 {
 		maxStackedCards = 0
@@ -174,18 +181,41 @@ func (m Model) renderColumn(col Column, colIndex int, contentHeight int, colWidt
 	}
 
 	for i := startIndex; i < len(col.Cards); i++ {
+		// Show drop indicator before this card if needed
+		if showDropIndicator && m.dropTargetIndex == i {
+			dropLine := strings.Repeat("─", cardWidth)
+			columnContent.WriteString(styleDropIndicator.Render(dropLine) + "\n")
+		}
+
 		card := col.Cards[i]
 		isLast := i == len(col.Cards)-1
 		isSelected := colIndex == m.selectedColumn && i == m.selectedCard
 
+		// Check if this is the card being dragged
+		isDragging := m.draggingCard != nil && m.dragFromColumn == colIndex && i == m.dragFromIndex
+
 		if isLast {
 			// Last card - show full card
-			columnContent.WriteString(renderCard(card.Title, isSelected))
+			if isDragging {
+				columnContent.WriteString(renderCardGhost(card.Title))
+			} else {
+				columnContent.WriteString(renderCard(card.Title, isSelected))
+			}
 		} else {
 			// Stacked card - show only top 2 lines
-			columnContent.WriteString(renderCardTopLines(card.Title, isSelected))
+			if isDragging {
+				columnContent.WriteString(renderCardTopLinesGhost(card.Title))
+			} else {
+				columnContent.WriteString(renderCardTopLines(card.Title, isSelected))
+			}
 			columnContent.WriteString("\n")
 		}
+	}
+
+	// Show drop indicator at end if needed
+	if showDropIndicator && m.dropTargetIndex == len(col.Cards) {
+		dropLine := strings.Repeat("─", cardWidth)
+		columnContent.WriteString("\n" + styleDropIndicator.Render(dropLine))
 	}
 
 	// If we couldn't show all cards, indicate how many are hidden

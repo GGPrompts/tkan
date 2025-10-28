@@ -13,6 +13,10 @@
 **Currently Implemented:**
 - ✅ **📋 Visual Kanban Board**: BACKLOG, TODO, PROGRESS, REVIEW, DONE columns
 - ✅ **🃏 Solitaire-Style Cards**: Stacked cards with wrapped titles (12×5 chars)
+- ✅ **🖱️ Drag & Drop**: Mouse-based card dragging with live visual feedback
+- ✅ **🎯 Card Reordering**: Drag cards anywhere - between cards or across columns
+- ✅ **💚 Drop Indicator**: Green line shows exactly where cards will land
+- ✅ **👻 Ghost Cards**: Dragged cards appear faded at source position
 - ✅ **📁 Multi-Project Support**: Automatic discovery of `.tkan.yaml` files
 - ✅ **🎨 Detail Panel**: Toggleable 33% width panel with full card info
 - ✅ **📦 Archive Column**: Toggleable archive (press 'a')
@@ -21,9 +25,8 @@
 - ✅ **🎯 Project Selector**: Choose from multiple projects with ↑/↓
 
 **Coming Soon:**
-- 🚧 **Drag & Drop**: Mouse-based card dragging (Phase 2)
+- 📅 **Card Editing**: Create/edit/delete cards (Phase 2, partial)
 - 📅 **Table View**: Sortable data table view (Phase 3)
-- 📅 **Card Editing**: Create/edit/delete cards (Phase 2)
 - 📅 **Search/Filter**: Find cards by text, tags, assignee (Phase 3)
 
 ---
@@ -116,13 +119,17 @@ tkan
 - `v` - Table view (coming in Phase 3)
 - `q` - Quit
 
-### Coming Soon (Phase 2+)
+### Mouse Controls
+- **Click & Drag** - Move cards between columns or reorder within column
+- **Visual Feedback** - Green line shows drop position, ghost card at source
+- **Precise Positioning** - Hover over top/bottom half of cards to insert before/after
+
+### Coming Soon (Phase 2, partial)
 - `n` - New card
 - `e` - Edit card
 - `d` - Delete card
-- `m` - Move card to column
+- `m` - Move card to column (keyboard alternative)
 - `/` - Search/filter
-- Mouse drag - Move cards between columns
 
 ---
 
@@ -176,12 +183,16 @@ Built with proven patterns from:
 - [x] YAML persistence
 - [x] Archive toggle
 
-**Phase 2 - Interactions** 🚧 NEXT
-- [ ] Drag & drop cards (Solitaire-style)
-- [ ] Card creation
-- [ ] Card editing
-- [ ] Card deletion
-- [ ] Move card between columns
+**Phase 2 - Interactions** ✅ COMPLETED (2025-10-28)
+- [x] Drag & drop cards (Solitaire-style)
+- [x] Card reordering within columns
+- [x] Visual drop indicator (green line)
+- [x] Ghost card effect during drag
+- [x] Move cards across all columns (including DONE)
+- [ ] Card creation (pending)
+- [ ] Card editing (pending)
+- [ ] Card deletion (pending)
+- [ ] Move card keyboard shortcut (pending)
 
 **Phase 3 - Table View** 📅 PLANNED
 - [ ] Table view with sortable headers

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -14,17 +16,19 @@ func NewModel(board *Board, projects []Project) Model {
 	}
 
 	return Model{
-		board:           board,
-		projects:        projects,
-		selectedProject: 0,
-		viewMode:        viewMode,
-		selectedColumn:  0,
-		selectedCard:    0,
-		showDetails:     true,  // Start with details panel visible
-		showArchive:     false, // Hide archive by default
-		width:           0,
-		height:          0,
-		ready:           false,
+		board:            board,
+		projects:         projects,
+		selectedProject:  0,
+		viewMode:         viewMode,
+		selectedColumn:   0,
+		selectedCard:     0,
+		showDetails:      true,  // Start with details panel visible
+		showArchive:      false, // Hide archive by default
+		width:            0,
+		height:           0,
+		ready:            false,
+		dropTargetColumn: -1, // Initialize drop target as invalid
+		dropTargetIndex:  -1,
 	}
 }
 
@@ -158,4 +162,289 @@ func (m *Model) loadSelectedProject() error {
 	m.selectedColumn = 0
 	m.selectedCard = 0
 	return nil
+}
+
+// getColumnAtPosition determines which column is at the given screen position
+// Returns columnIndex (or -1 if outside board area)
+func (m *Model) getColumnAtPosition(x, y int) int {
+	// Check if click is within the board area
+	if x < 0 || x >= m.boardWidth {
+		return -1
+	}
+
+	// Get visible columns and calculate column width
+	visibleColumns := m.getVisibleColumns()
+	if len(visibleColumns) == 0 {
+		return -1
+	}
+
+	colWidth := m.boardWidth / len(visibleColumns)
+
+	// Determine which column was clicked
+	columnIndex := x / colWidth
+	if columnIndex < 0 || columnIndex >= len(visibleColumns) {
+		return -1
+	}
+
+	return columnIndex
+}
+
+// getDropPosition determines where a card would be dropped in a column
+// Returns columnIndex, insertIndex where insertIndex is the position to insert
+// insertIndex = 0 means insert at start, insertIndex = len(cards) means insert at end
+// Returns -1, -1 if outside valid drop area
+func (m *Model) getDropPosition(x, y int) (columnIndex, insertIndex int) {
+	// Layout calculation (must match renderBoardView exactly):
+	// Line 0-1: Title bar (2 lines)
+	// Line 2: Column headers (1 line)
+	// Line 3+: Card area starts here
+
+	const titleHeight = 2    // Title bar
+	const headerHeight = 1   // Column headers
+	const cardAreaStartY = 3 // Cards start at Y=3
+
+	// Check if click is in the card area
+	if y < cardAreaStartY {
+		return -1, -1
+	}
+
+	// Get column index
+	columnIndex = m.getColumnAtPosition(x, y)
+	if columnIndex == -1 {
+		return -1, -1
+	}
+
+	// Calculate relative Y position within card area
+	relY := y - cardAreaStartY
+
+	// Get the actual column from visible columns
+	visibleColumns := m.getVisibleColumns()
+	col := visibleColumns[columnIndex]
+
+	// Empty column - insert at position 0
+	if len(col.Cards) == 0 {
+		return columnIndex, 0
+	}
+
+	// Calculate insertion position based on Y
+	insertIndex = m.getInsertIndexInColumn(col, relY)
+
+	return columnIndex, insertIndex
+}
+
+// getCardIndexInColumn determines which card in a column was clicked
+// based on the Y position relative to the card area start
+func (m *Model) getCardIndexInColumn(col Column, relY int) int {
+	numCards := len(col.Cards)
+	if numCards == 0 {
+		return -1
+	}
+
+	// Card rendering logic (from view.go renderColumn):
+	// - Each stacked card shows 2 lines
+	// - Last card shows full 5 lines
+	// - We may not show all cards if column is too long
+
+	const cardHeight = 5    // Full card height
+	const stackedHeight = 2 // Visible height of stacked cards
+
+	contentHeight := m.getContentHeight()
+
+	// Calculate how many cards are actually visible
+	maxStackedCards := (contentHeight - cardHeight) / stackedHeight
+	if maxStackedCards < 0 {
+		maxStackedCards = 0
+	}
+
+	cardsToShow := numCards
+	if cardsToShow > maxStackedCards+1 {
+		cardsToShow = maxStackedCards + 1
+	}
+
+	startIndex := numCards - cardsToShow
+	if startIndex < 0 {
+		startIndex = 0
+	}
+
+	// Calculate which visible card was clicked
+	// Each stacked card except the last takes stackedHeight lines
+	numStackedCards := cardsToShow - 1
+	stackedAreaHeight := numStackedCards * stackedHeight
+
+	if relY < stackedAreaHeight {
+		// Clicked on a stacked card
+		clickedStackedIndex := relY / stackedHeight
+		return startIndex + clickedStackedIndex
+	}
+
+	// Check if clicked on the last (full) card
+	lastCardStartY := stackedAreaHeight
+	lastCardEndY := lastCardStartY + cardHeight
+
+	if relY >= lastCardStartY && relY < lastCardEndY {
+		// Clicked on the last card
+		return numCards - 1
+	}
+
+	return -1 // Clicked below all cards
+}
+
+// getInsertIndexInColumn determines where to insert a card in a column
+// Returns the index where the card should be inserted (0 = start, len(cards) = end)
+func (m *Model) getInsertIndexInColumn(col Column, relY int) int {
+	numCards := len(col.Cards)
+	if numCards == 0 {
+		return 0
+	}
+
+	const cardHeight = 5    // Full card height
+	const stackedHeight = 2 // Visible height of stacked cards
+
+	contentHeight := m.getContentHeight()
+
+	// Calculate how many cards are actually visible
+	maxStackedCards := (contentHeight - cardHeight) / stackedHeight
+	if maxStackedCards < 0 {
+		maxStackedCards = 0
+	}
+
+	cardsToShow := numCards
+	if cardsToShow > maxStackedCards+1 {
+		cardsToShow = maxStackedCards + 1
+	}
+
+	startIndex := numCards - cardsToShow
+	if startIndex < 0 {
+		startIndex = 0
+	}
+
+	// Calculate which visible card the mouse is over
+	numStackedCards := cardsToShow - 1
+	stackedAreaHeight := numStackedCards * stackedHeight
+
+	if relY < stackedAreaHeight {
+		// Mouse is over a stacked card
+		cardIndex := startIndex + (relY / stackedHeight)
+
+		// Determine if mouse is in top half or bottom half of the card segment
+		posInCard := relY % stackedHeight
+		if posInCard < stackedHeight/2 {
+			// Top half - insert before this card
+			return cardIndex
+		} else {
+			// Bottom half - insert after this card
+			return cardIndex + 1
+		}
+	}
+
+	// Mouse is over the last (full) card area
+	lastCardStartY := stackedAreaHeight
+	lastCardEndY := lastCardStartY + cardHeight
+
+	if relY >= lastCardStartY && relY < lastCardEndY {
+		// Determine if mouse is in top half or bottom half of the last card
+		posInLastCard := relY - lastCardStartY
+		if posInLastCard < cardHeight/2 {
+			// Top half - insert before last card
+			return numCards - 1
+		} else {
+			// Bottom half - insert after last card (at end)
+			return numCards
+		}
+	}
+
+	// Below all cards - insert at end
+	return numCards
+}
+
+// moveCard moves a card from one position to another (within or across columns)
+func (m *Model) moveCard(fromColIndex, fromCardIndex, toColIndex, insertIndex int) {
+	visibleColumns := m.getVisibleColumns()
+
+	// Validate indices
+	if fromColIndex < 0 || fromColIndex >= len(visibleColumns) {
+		return
+	}
+	if toColIndex < 0 || toColIndex >= len(visibleColumns) {
+		return
+	}
+
+	fromCol := visibleColumns[fromColIndex]
+	toCol := visibleColumns[toColIndex]
+
+	if fromCardIndex < 0 || fromCardIndex >= len(fromCol.Cards) {
+		return
+	}
+
+	// Get the card to move
+	card := fromCol.Cards[fromCardIndex]
+
+	// Find the actual columns in the board (not just visible columns)
+	var fromColPtr, toColPtr *Column
+	for i := range m.board.Columns {
+		if m.board.Columns[i].Name == fromCol.Name {
+			fromColPtr = &m.board.Columns[i]
+		}
+		if m.board.Columns[i].Name == toCol.Name {
+			toColPtr = &m.board.Columns[i]
+		}
+	}
+
+	if fromColPtr == nil || toColPtr == nil {
+		return
+	}
+
+	// Handle reordering within the same column
+	if fromColIndex == toColIndex {
+		// Check if actually moving to a different position
+		if fromCardIndex == insertIndex || fromCardIndex+1 == insertIndex {
+			return // No effective move
+		}
+
+		// Remove card from source position
+		fromColPtr.Cards = append(fromColPtr.Cards[:fromCardIndex], fromColPtr.Cards[fromCardIndex+1:]...)
+
+		// Adjust insert index if needed (if we removed a card before the insert position)
+		adjustedInsertIndex := insertIndex
+		if fromCardIndex < insertIndex {
+			adjustedInsertIndex--
+		}
+
+		// Insert at new position
+		if adjustedInsertIndex >= len(fromColPtr.Cards) {
+			fromColPtr.Cards = append(fromColPtr.Cards, card)
+		} else {
+			fromColPtr.Cards = append(fromColPtr.Cards[:adjustedInsertIndex], append([]*Card{card}, fromColPtr.Cards[adjustedInsertIndex:]...)...)
+		}
+
+		m.selectedColumn = toColIndex
+		m.selectedCard = adjustedInsertIndex
+	} else {
+		// Moving to a different column
+
+		// Remove card from source column
+		fromColPtr.Cards = append(fromColPtr.Cards[:fromCardIndex], fromColPtr.Cards[fromCardIndex+1:]...)
+
+		// Insert into target column at specified position
+		if insertIndex >= len(toColPtr.Cards) {
+			toColPtr.Cards = append(toColPtr.Cards, card)
+			m.selectedCard = len(toColPtr.Cards) - 1
+		} else {
+			toColPtr.Cards = append(toColPtr.Cards[:insertIndex], append([]*Card{card}, toColPtr.Cards[insertIndex:]...)...)
+			m.selectedCard = insertIndex
+		}
+
+		// Update card's column field
+		card.Column = toCol.Name
+		m.selectedColumn = toColIndex
+	}
+
+	// Update modification time
+	card.ModifiedAt = time.Now()
+
+	// Save the board
+	if m.selectedProject >= 0 && m.selectedProject < len(m.projects) {
+		projectPath := m.projects[m.selectedProject].Path
+		SaveBoard(projectPath, m.board)
+	}
 }

@@ -1,0 +1,103 @@
+name: Card Display Test
+description: Testing various card title lengths and wrapping
+columns:
+  - name: BACKLOG
+  - name: TODO
+  - name: PROGRESS
+  - name: REVIEW
+  - name: DONE
+  - name: ARCHIVE
+cards:
+  - id: "1"
+    title: Short
+    description: A short title
+    tags:
+      - test
+    assignee: "@alice"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: TODO
+  - id: "2"
+    title: Medium length title
+    description: This should wrap nicely
+    tags:
+      - test
+    assignee: "@bob"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: TODO
+  - id: "3"
+    title: Very long title that should wrap across multiple lines
+    description: Testing wrapping behavior
+    tags:
+      - test
+    assignee: "@charlie"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: TODO
+  - id: "4"
+    title: Supercalifragilisticexpialidocious
+    description: Testing very long single word
+    tags:
+      - test
+    assignee: "@dave"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: TODO
+  - id: "5"
+    title: Card 1
+    description: First stacked card
+    tags:
+      - stack
+    assignee: "@alice"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: PROGRESS
+  - id: "6"
+    title: Card 2
+    description: Second stacked card
+    tags:
+      - stack
+    assignee: "@alice"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: PROGRESS
+  - id: "7"
+    title: Card 3
+    description: Third stacked card
+    tags:
+      - stack
+    assignee: "@alice"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: PROGRESS
+  - id: "8"
+    title: Card 4
+    description: Fourth stacked card
+    tags:
+      - stack
+    assignee: "@alice"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: PROGRESS
+  - id: "9"
+    title: Last card visible
+    description: This is the last card you should see fully
+    tags:
+      - stack
+      - last
+    assignee: "@alice"
+    due_date: ""
+    created_at: 2025-10-28T00:00:00Z
+    modified_at: 2025-10-28T00:00:00Z
+    column: PROGRESS
+created_at: 2025-10-28T00:00:00Z
+modified_at: 2025-10-28T00:00:00Z

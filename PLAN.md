@@ -313,20 +313,36 @@ settings:
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Week 1)
+### Phase 1: Foundation (Week 1) ✅ **COMPLETED - 2025-10-28**
 
 **Goal**: Set up project structure, data model, basic board view
 
+**What We Built**:
+- ✅ Full Kanban board view with BACKLOG, TODO, PROGRESS, REVIEW, DONE columns
+- ✅ 12×5 char cards with wrapped titles (Solitaire-style stacking)
+- ✅ Toggleable detail panel (Tab key, 33% width)
+- ✅ Toggleable ARCHIVE column ('a' key, hidden by default)
+- ✅ Multi-project support with project selector
+- ✅ Keyboard navigation (←→↑↓, g/G, p for projects)
+- ✅ YAML persistence (.tkan.yaml files)
+- ✅ Project scanning (finds all .tkan.yaml in subdirectories)
+- ✅ Card stacking (borrowed from ~/projects/TUIClassics/solitaire)
+
+**Files Created** (1,338 lines total):
+- main.go, types.go, model.go, view.go, styles.go
+- update.go, update_keyboard.go, update_mouse.go
+- persistence.go, projects.go
+
 **Tasks:**
-1. Create project with TUITemplate structure
-2. Define types (Card, Column, Board, Model)
-3. Implement YAML persistence (load/save)
-4. Create basic board view with static columns
-5. Render cards as simple bordered boxes
+1. ✅ Create project with TUITemplate structure
+2. ✅ Define types (Card, Column, Board, Model)
+3. ✅ Implement YAML persistence (load/save)
+4. ✅ Create basic board view with static columns
+5. ✅ Render cards as simple bordered boxes
 
-**Deliverable**: Can view a board with hardcoded cards
+**Deliverable**: ✅ Can view a board with hardcoded cards (and much more!)
 
-### Phase 2: Board View - Drag System (Week 2)
+### Phase 2: Board View - Drag System (Week 2) 🚧 **NEXT**
 
 **Goal**: Implement Solitaire-style card dragging
 
@@ -359,7 +375,7 @@ if dx*dx + dy*dy < 4 {
 
 **Deliverable**: Can drag cards between columns with mouse
 
-### Phase 3: Table View (Week 3)
+### Phase 3: Table View (Week 3) 📅 **PLANNED**
 
 **Goal**: Implement TFE-style table view with sortable headers
 

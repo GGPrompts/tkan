@@ -1,0 +1,84 @@
+name: My Project
+description: A sample Kanban board for tkan
+columns:
+  - name: BACKLOG
+  - name: TODO
+  - name: PROGRESS
+  - name: REVIEW
+  - name: DONE
+  - name: ARCHIVE
+cards:
+  - id: "0"
+    title: New feature idea
+    description: Consider adding dark mode support.
+    tags:
+      - enhancement
+    assignee: ""
+    due_date: ""
+    created_at: 2025-10-08T00:00:00Z
+    modified_at: 2025-10-13T00:00:00Z
+    column: BACKLOG
+  - id: "1"
+    title: Fix login flow
+    description: Users can't authenticate via OAuth. Error 401 on token refresh.
+    tags:
+      - bug
+      - p1
+    assignee: "@alice"
+    due_date: "2025-01-15"
+    created_at: 2025-10-18T00:00:00Z
+    modified_at: 2025-10-27T00:00:00Z
+    column: TODO
+  - id: "2"
+    title: Add OAuth support
+    description: Implement OAuth 2.0 authentication flow with Google and GitHub providers.
+    tags:
+      - feature
+    assignee: "@bob"
+    due_date: "2025-01-20"
+    created_at: 2025-10-20T00:00:00Z
+    modified_at: 2025-10-27T00:00:00Z
+    column: PROGRESS
+  - id: "3"
+    title: Review PR #42
+    description: Code review for authentication refactor pull request.
+    tags:
+      - code-review
+    assignee: "@charlie"
+    due_date: "2025-01-18"
+    created_at: 2025-10-23T00:00:00Z
+    modified_at: 2025-10-27T00:00:00Z
+    column: REVIEW
+  - id: "4"
+    title: Setup database
+    description: Configure PostgreSQL database and run migrations.
+    tags:
+      - infra
+      - done
+    assignee: "@dave"
+    due_date: ""
+    created_at: 2025-10-13T00:00:00Z
+    modified_at: 2025-10-18T00:00:00Z
+    column: DONE
+  - id: "5"
+    title: Write tests
+    description: Add unit tests for authentication module.
+    tags:
+      - test
+    assignee: "@alice"
+    due_date: "2025-01-22"
+    created_at: 2025-10-19T00:00:00Z
+    modified_at: 2025-10-26T00:00:00Z
+    column: TODO
+  - id: "6"
+    title: Add docs
+    description: Update README and add API documentation.
+    tags:
+      - docs
+    assignee: "@eve"
+    due_date: "2025-01-25"
+    created_at: 2025-10-22T00:00:00Z
+    modified_at: 2025-10-27T00:00:00Z
+    column: PROGRESS
+created_at: 2025-10-08T00:00:00Z
+modified_at: 2025-10-28T00:00:00Z

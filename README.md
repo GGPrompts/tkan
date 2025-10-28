@@ -10,43 +10,57 @@
 
 ## ✨ Features
 
-- **🎯 Dual View System**: Toggle between visual Kanban board and sortable data table
-- **🎮 Drag & Drop**: Solitaire-style card dragging between columns
-- **📊 Sortable Headers**: Click table headers to sort by any field
-- **📋 Detail Panel**: Always-visible card details with full metadata
-- **🎨 Beautiful UI**: Carefully crafted with Lipgloss styling
-- **⌨️ Keyboard-First**: Complete keyboard navigation with mouse support
-- **📁 Project-Specific**: Each project has its own `.tkan.yaml` board
-- **🔍 Filtering**: Search by text, filter by tags, assignees, or columns
+**Currently Implemented:**
+- ✅ **📋 Visual Kanban Board**: BACKLOG, TODO, PROGRESS, REVIEW, DONE columns
+- ✅ **🃏 Solitaire-Style Cards**: Stacked cards with wrapped titles (12×5 chars)
+- ✅ **📁 Multi-Project Support**: Automatic discovery of `.tkan.yaml` files
+- ✅ **🎨 Detail Panel**: Toggleable 33% width panel with full card info
+- ✅ **📦 Archive Column**: Toggleable archive (press 'a')
+- ✅ **⌨️ Keyboard Navigation**: Full keyboard control (←→↑↓, vim keys)
+- ✅ **💾 YAML Persistence**: Plain text `.tkan.yaml` files
+- ✅ **🎯 Project Selector**: Choose from multiple projects with ↑/↓
+
+**Coming Soon:**
+- 🚧 **Drag & Drop**: Mouse-based card dragging (Phase 2)
+- 📅 **Table View**: Sortable data table view (Phase 3)
+- 📅 **Card Editing**: Create/edit/delete cards (Phase 2)
+- 📅 **Search/Filter**: Find cards by text, tags, assignee (Phase 3)
 
 ---
 
 ## 📸 Screenshots
 
-### Board View
+### Board View (Current)
 ```
-┌──────────────────────────────────────────────┬─────────────────────┐
-│  TODO   │ PROGRESS │ REVIEW  │   DONE        │ ▶ CARD DETAILS      │
-│   (3)   │   (2)    │  (1)    │   (5)         │                     │
-│ ┌──────┐ ┌──────┐  ┌──────┐  ┌──────┐       │ Fix login flow      │
-│ │Fix   │ │Add   │  │Review│  │Setup │       │ ━━━━━━━━━━━━━━━━━━━ │
-│ │login │ │auth  │  │PR#42 │  │DB    │       │                     │
-│ │#p1   │ │#feat │  │#code │  │#done │       │ Description:        │
-│ └──────┘ └──────┘  └──────┘  └──────┘       │ Users can't auth... │
-└──────────────────────────────────────────────┴─────────────────────┘
+┌────────────────────────────────────────────────┬─────────────────────┐
+│ BACKLOG │ TODO │ PROGRESS │ REVIEW │ DONE     │ ▶ CARD DETAILS      │
+│   (1)   │ (2)  │   (5)    │  (1)   │  (1)     │                     │
+│ ┌──────  ┌────  ┌──────────  ┌────  ┌────     │ Fix login flow      │
+│ │New      │Fix    │Card 1      │Rev   │Set      │ ━━━━━━━━━━━━━━━━━━━ │
+│ ┌──────  ┌────  ┌──────────  ┌────             │                     │
+│ │feature  │Write  │Card 2      │PR             │ Description:        │
+│           ┌────  ┌──────────┐                   │ Users can't auth    │
+│           │Add    │Card 3    │                  │ via OAuth. Error    │
+│                   │          │                  │ 401 on refresh...   │
+│                   └──────────┘                  │                     │
+│                   ┌──────────┐                  │ Tags: #bug #p1      │
+│                   │Card 4    │                  │ Assigned: @alice    │
+│                   │          │                  │ Due: Jan 15         │
+│                   └──────────┘                  │ Created: Oct 18     │
+│                   ┌──────────┐                  │ Modified: Oct 27    │
+│                   │Last card │                  │                     │
+│                   │visible   │                  │ [E]dit [M]ove      │
+│                   └──────────┘                  │                     │
+└────────────────────────────────────────────────┴─────────────────────┘
 ```
 
-### Table View
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  Title ↓              Column      Tags        Assignee   Due Date   │
-├─────────────────────────────────────────────────────────────────────┤
-│  Fix login flow       TODO        #bug #p1    @alice     Jan 15     │
-│  Add OAuth support    PROGRESS    #feature    @bob       Jan 20     │
-│  Review PR #42        REVIEW      #code       @charlie   Jan 18     │
-│  Setup database       DONE        #infra      @dave      -          │
-└─────────────────────────────────────────────────────────────────────┘
-```
+**Features shown:**
+- Solitaire-style stacking (partial cards + full last card)
+- Wrapped titles (no truncation!)
+- Detail panel with full metadata
+- Cards stack vertically to show more in less space
+
+### Table View (Coming in Phase 3)
 
 ---
 
@@ -56,28 +70,22 @@
 
 **From source:**
 ```bash
-git clone https://github.com/yourname/tkan.git
+git clone https://github.com/GGPrompts/tkan.git
 cd tkan
 go build
 sudo mv tkan /usr/local/bin/
 ```
 
-**Or download binary from [Releases](https://github.com/yourname/tkan/releases)**
+**Or download binary from [Releases](https://github.com/GGPrompts/tkan/releases)** (coming soon)
 
 ### Usage
 
 ```bash
-# Start tkan in current directory
+# Start tkan (scans current directory for .tkan.yaml files)
 tkan
 
-# Use specific project
-tkan ~/projects/myapp
-
-# List all projects with boards
-tkan --list
-
-# Create new board interactively
-tkan init
+# If no board found, creates .tkan.yaml with sample cards
+# If multiple projects found, shows project selector
 ```
 
 ### First Time Setup
@@ -92,34 +100,29 @@ tkan init
 
 ## ⌨️ Keyboard Shortcuts
 
-### General
-- `v` - Toggle between board and table view
-- `Tab` - Toggle detail panel
-- `/` - Search/filter mode
-- `#` - Filter by tag
-- `@` - Filter by assignee
+### Project List
+- `↑/↓` or `k/j` - Navigate projects
+- `Enter` - Open selected project
 - `q` - Quit
-- `?` - Show help
 
 ### Board View
 - `←/→` or `h/l` - Navigate columns
 - `↑/↓` or `k/j` - Navigate cards
-- `Enter` - Select card
+- `g` - Jump to first column
+- `G` - Jump to last column
+- `Tab` - Toggle detail panel
+- `a` - Toggle archive column visibility
+- `p` - Return to project list (if multiple projects)
+- `v` - Table view (coming in Phase 3)
+- `q` - Quit
+
+### Coming Soon (Phase 2+)
 - `n` - New card
 - `e` - Edit card
 - `d` - Delete card
 - `m` - Move card to column
-
-### Table View
-- `↑/↓` or `k/j` - Navigate rows
-- `Enter` - Select card
-- Click headers to sort
-
-### Mouse
-- **Click** - Select card/row
-- **Drag** (Board view) - Move card between columns
-- **Click header** (Table view) - Sort by column
-- **Right-click** - Context menu (future)
+- `/` - Search/filter
+- Mouse drag - Move cards between columns
 
 ---
 
@@ -164,14 +167,27 @@ Built with proven patterns from:
 
 ## 🗺️ Roadmap
 
-**v1.0 - Core Features** (In Progress)
+**Phase 1 - Foundation** ✅ COMPLETED (2025-10-28)
 - [x] Project structure and data model
-- [ ] Board view with draggable cards
-- [ ] Table view with sortable headers
-- [ ] Detail panel
-- [ ] Keyboard navigation
+- [x] Board view with stacked cards
+- [x] Detail panel (toggleable)
+- [x] Keyboard navigation
+- [x] Multi-project support
+- [x] YAML persistence
+- [x] Archive toggle
+
+**Phase 2 - Interactions** 🚧 NEXT
+- [ ] Drag & drop cards (Solitaire-style)
+- [ ] Card creation
 - [ ] Card editing
+- [ ] Card deletion
+- [ ] Move card between columns
+
+**Phase 3 - Table View** 📅 PLANNED
+- [ ] Table view with sortable headers
+- [ ] Click to sort
 - [ ] Search and filtering
+- [ ] Column customization
 
 **v1.1 - Enhanced Features**
 - [ ] Undo/redo

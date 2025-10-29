@@ -376,7 +376,49 @@ settings:
 
 **Deliverable**: ✅ Full drag & drop with visual feedback and card reordering
 
-### Phase 3: Table View (Week 3) 📅 **PLANNED**
+**Additional Features Added**:
+- ✅ **Drag delay (150ms)** to distinguish click vs drag
+  - Single click selects card immediately  
+  - Hold to drag prevents accidental drags
+  - Quick motion bypasses timer for responsive feel
+
+### Phase 2.5: GitHub Projects Backend ✅ **COMPLETED - 2025-10-28**
+
+**Goal**: Enable AI collaboration and multi-platform access
+
+**What We Built**:
+- ✅ GitHub Projects integration via `--github` flag
+- ✅ Full backend abstraction (supports both local YAML and GitHub)
+- ✅ REST API integration for project operations
+- ✅ Automatic field mapping (Status ↔ Columns)
+- ✅ Created tkan Development project (#7) with 16 tasks
+- ✅ CLAUDE.md documentation for AI assistance
+- ✅ TUI skills imported from TUITemplate
+
+**Architecture Decision**: GitHub Projects chosen over local YAML because:
+- 🤖 Claude can manage tasks via `gh` CLI (no complex workarounds)
+- 📱 Edit on mobile via GitHub web interface
+- ☁️ Automatic cloud backup and sync
+- 👥 Team collaboration support
+- 🔄 Real-time updates across all clients
+- 💡 Internet requirement not an issue (Claude needs internet anyway!)
+
+**Files Added/Modified**:
+- backend.go (backend interface)
+- backend_github.go (GitHub Projects implementation)
+- main.go (--github flag support)
+- types.go (backend field in Model)
+- model.go (backend integration)
+- CLAUDE.md (AI integration guide)
+- .claude/skills/ (TUI development skills)
+
+**Usage**:
+```bash
+./tkan                    # Local YAML mode
+./tkan --github owner/7   # GitHub Project mode
+```
+
+### Phase 3: Table View (Week 3) 📅 **UP NEXT**
 
 **Goal**: Implement TFE-style table view with sortable headers
 

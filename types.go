@@ -48,6 +48,7 @@ type Model struct {
 	board          *Board
 	projects       []Project // List of available projects
 	selectedProject int      // Which project is selected in project list
+	backend        Backend   // Backend for persistence
 
 	// UI State
 	viewMode       ViewMode
@@ -66,11 +67,14 @@ type Model struct {
 	ready bool
 
 	// Mouse drag state (Solitaire pattern)
-	draggingCard   *Card // Card currently being dragged
-	dragFromColumn int   // Which column the drag started from
-	dragFromIndex  int   // Card index in the source column
-	mousePressX    int   // X position where mouse was pressed
-	mousePressY    int   // Y position where mouse was pressed
+	draggingCard   *Card     // Card currently being dragged
+	dragFromColumn int       // Which column the drag started from
+	dragFromIndex  int       // Card index in the source column
+	mousePressX    int       // X position where mouse was pressed
+	mousePressY    int       // Y position where mouse was pressed
+	mouseHeldDown  bool      // Whether mouse button is currently held
+	potentialDrag  bool      // Whether we're waiting to see if this becomes a drag
+	dragStartTime  time.Time // When the mouse was pressed (for drag delay)
 
 	// Drop target tracking (for visual feedback)
 	dropTargetColumn int // Column where card would be dropped (-1 if none)

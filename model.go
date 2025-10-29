@@ -8,6 +8,16 @@ import (
 
 // NewModel creates a new Model with the given board and projects
 func NewModel(board *Board, projects []Project) Model {
+	// Default to local backend for backward compatibility
+	backend := NewLocalBackend(".tkan.yaml")
+	if len(projects) > 0 {
+		backend = NewLocalBackend(projects[0].Path)
+	}
+	return NewModelWithBackend(board, projects, backend)
+}
+
+// NewModelWithBackend creates a new Model with a specific backend
+func NewModelWithBackend(board *Board, projects []Project, backend Backend) Model {
 	// If we have multiple projects, start in project list view
 	// If only one project, go straight to board view
 	viewMode := ViewBoard
@@ -19,6 +29,7 @@ func NewModel(board *Board, projects []Project) Model {
 		board:            board,
 		projects:         projects,
 		selectedProject:  0,
+		backend:          backend,
 		viewMode:         viewMode,
 		selectedColumn:   0,
 		selectedCard:     0,
@@ -442,9 +453,11 @@ func (m *Model) moveCard(fromColIndex, fromCardIndex, toColIndex, insertIndex in
 	// Update modification time
 	card.ModifiedAt = time.Now()
 
-	// Save the board
-	if m.selectedProject >= 0 && m.selectedProject < len(m.projects) {
-		projectPath := m.projects[m.selectedProject].Path
-		SaveBoard(projectPath, m.board)
+	// Save changes using backend
+	if m.backend != nil {
+		// For GitHub backend, update the card's column
+		m.backend.MoveCard(card.ID, toCol.Name)
+		// For local backend, save the entire board
+		m.backend.SaveBoard(m.board)
 	}
 }

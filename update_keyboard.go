@@ -52,6 +52,8 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleTableKeyMsg(msg)
 	case ViewHelp:
 		return m.handleHelpKeyMsg(msg)
+	case ViewProjectSource:
+		return m.handleProjectSourceKeyMsg(msg)
 	}
 
 	return m, nil
@@ -127,10 +129,15 @@ func (m Model) handleBoardKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	// Back to project list (if multiple projects)
+	// Back to project list or show source selector
 	case "p", "P":
 		if len(m.projects) > 1 {
+			// Multiple projects - show project list
 			m.viewMode = ViewProjectList
+		} else {
+			// 0 or 1 project - show source selector
+			m.selectedSourceOpt = 0
+			m.viewMode = ViewProjectSource
 		}
 		return m, nil
 
@@ -184,6 +191,39 @@ func (m Model) handleHelpKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) handleFormKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	// Check if this is GitHub owner input mode
+	if m.formMode == FormMode(100) {
+		switch msg.String() {
+		case "esc":
+			// Cancel - go back to source selector
+			m.formMode = FormNone
+			m.formInputs = nil
+			m.viewMode = ViewProjectSource
+			return m, nil
+
+		case "enter":
+			// Load GitHub projects for entered owner
+			owner := ""
+			if len(m.formInputs) > 0 {
+				owner = m.formInputs[0].Value()
+			}
+			m.formMode = FormNone
+			m.formInputs = nil
+			if owner != "" {
+				return m.loadGitHubProjects(owner)
+			}
+			m.viewMode = ViewProjectSource
+			return m, nil
+		}
+
+		// Update the text input
+		if len(m.formInputs) > 0 {
+			m.formInputs[0], cmd = m.formInputs[0].Update(msg)
+		}
+		return m, cmd
+	}
+
+	// Regular card form handling
 	switch msg.String() {
 	case "esc":
 		// Cancel form
@@ -247,4 +287,31 @@ func (m Model) handleFormKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, cmd
+}
+
+// handleProjectSourceKeyMsg handles keyboard input for project source selection view
+func (m Model) handleProjectSourceKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		// Cancel - go back to board
+		m.viewMode = ViewBoard
+		return m, nil
+
+	case "up", "k":
+		if m.selectedSourceOpt > 0 {
+			m.selectedSourceOpt--
+		}
+		return m, nil
+
+	case "down", "j":
+		if m.selectedSourceOpt < 3 { // 4 options (0-3)
+			m.selectedSourceOpt++
+		}
+		return m, nil
+
+	case "enter":
+		return m.handleProjectSourceSelection()
+	}
+
+	return m, nil
 }

@@ -43,6 +43,7 @@ const (
 	ViewBoard
 	ViewTable
 	ViewHelp
+	ViewProjectSource
 )
 
 // FormMode represents the current form state
@@ -63,14 +64,15 @@ type Model struct {
 	backend        Backend   // Backend for persistence
 
 	// UI State
-	viewMode       ViewMode
-	previousView   ViewMode // View to return to after help
-	selectedColumn int      // Which column is selected (0-4)
-	selectedCard   int      // Which card in the column is selected
-	showDetails    bool     // Show detail panel
-	showArchive    bool     // Show archive column
-	width          int
-	height         int
+	viewMode          ViewMode
+	previousView      ViewMode // View to return to after help
+	selectedColumn    int      // Which column is selected (0-4)
+	selectedCard      int      // Which card in the column is selected
+	selectedSourceOpt int      // Which project source option is selected
+	showDetails       bool     // Show detail panel
+	showArchive       bool     // Show archive column
+	width             int
+	height            int
 
 	// Layout (calculated from width/height)
 	boardWidth  int // Width of the board area (67% when details shown, 100% when hidden)

@@ -676,3 +676,92 @@ func (m *Model) deleteCard() {
 func generateCardID() string {
 	return fmt.Sprintf("card_%d", time.Now().UnixNano())
 }
+
+// handleProjectSourceSelection handles the selected project source option
+func (m Model) handleProjectSourceSelection() (tea.Model, tea.Cmd) {
+	switch m.selectedSourceOpt {
+	case 0:
+		// Local Projects - scan for .tkan.yaml files
+		return m.loadLocalProjects()
+	case 1:
+		// GitHub Projects (your projects)
+		return m.loadGitHubProjects("@me")
+	case 2:
+		// GitHub Projects (enter owner name)
+		return m.openGitHubOwnerInput()
+	case 3:
+		// Cancel - go back to board
+		m.viewMode = ViewBoard
+		return m, nil
+	}
+	return m, nil
+}
+
+// loadLocalProjects scans for local .tkan.yaml files and loads them
+func (m *Model) loadLocalProjects() (tea.Model, tea.Cmd) {
+	// Scan for projects in current directory
+	projects, err := ScanProjects(".")
+	if err != nil || len(projects) == 0 {
+		// No projects found - stay in source selector
+		return m, nil
+	}
+
+	m.projects = projects
+	m.selectedProject = 0
+
+	// Load the first project by default
+	if len(projects) == 1 {
+		// Single project - load it directly
+		m.backend = NewLocalBackend(projects[0].Path)
+		board, err := m.backend.LoadBoard()
+		if err == nil {
+			m.board = board
+		}
+		m.viewMode = ViewBoard
+	} else {
+		// Multiple projects - show project list
+		m.viewMode = ViewProjectList
+	}
+
+	return m, nil
+}
+
+// loadGitHubProjects loads GitHub projects for the specified owner
+func (m *Model) loadGitHubProjects(owner string) (tea.Model, tea.Cmd) {
+	ghProjects, err := ListGitHubProjects(owner)
+	if err != nil || len(ghProjects) == 0 {
+		// Failed to load or no projects - stay in source selector
+		return m, nil
+	}
+
+	// Convert to Project format
+	m.projects = nil
+	for _, ghp := range ghProjects {
+		m.projects = append(m.projects, Project{
+			Name: fmt.Sprintf("GitHub: %s", ghp.Title),
+			Path: fmt.Sprintf("github:%s/%d", ghp.Owner, ghp.Number),
+			Dir:  fmt.Sprintf("GitHub (%s)", ghp.Owner),
+		})
+	}
+
+	m.selectedProject = 0
+	m.viewMode = ViewProjectList
+
+	return m, nil
+}
+
+// openGitHubOwnerInput opens a text input for entering GitHub owner name
+func (m *Model) openGitHubOwnerInput() (tea.Model, tea.Cmd) {
+	// Create a text input for GitHub owner
+	ownerInput := textinput.New()
+	ownerInput.Placeholder = "Enter GitHub owner/org name"
+	ownerInput.Focus()
+	ownerInput.CharLimit = 100
+	ownerInput.Width = 60
+
+	m.formMode = FormMode(100) // Use a special form mode for GitHub owner input
+	m.formInputs = []textinput.Model{ownerInput}
+	m.formFocusIndex = 0
+
+	return m, nil
+}

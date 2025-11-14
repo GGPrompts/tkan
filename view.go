@@ -29,6 +29,8 @@ func (m Model) View() string {
 		return "Table view (not implemented in Phase 1)"
 	case ViewHelp:
 		return m.renderHelpView()
+	case ViewProjectSource:
+		return m.renderProjectSourceView()
 	default:
 		return "Unknown view mode"
 	}
@@ -309,8 +311,7 @@ func (m Model) renderStatus() string {
 		if m.showArchive {
 			archiveStatus = "visible"
 		}
-		projectsDebug := fmt.Sprintf("[%d projects]", len(m.projects))
-		help = fmt.Sprintf("←/→: Columns | ↑/↓: Cards | Tab: Details | a: Archive (%s) | p: Projects %s | q: Quit", archiveStatus, projectsDebug)
+		help = fmt.Sprintf("←/→: Columns | ↑/↓: Cards | Tab: Details | a: Archive (%s) | p: Projects | q: Quit", archiveStatus)
 	default:
 		help = "q: Quit"
 	}
@@ -469,6 +470,11 @@ Press ? or Esc or Enter or Space to close this help screen`
 
 // renderFormOverlay renders the card creation/editing form as an overlay
 func (m Model) renderFormOverlay(background string) string {
+	// Check if this is GitHub owner input mode
+	if m.formMode == FormMode(100) {
+		return m.renderGitHubOwnerInput()
+	}
+
 	// Determine form title
 	formTitle := "Create New Card"
 	if m.formMode == FormEditCard {
@@ -519,5 +525,101 @@ func (m Model) renderFormOverlay(background string) string {
 	)
 
 	// Layer the form over the background (simple approach - just replace)
+	return centeredForm
+}
+
+// renderProjectSourceView renders the project source selection menu
+func (m Model) renderProjectSourceView() string {
+	var sections []string
+
+	// Title
+	title := styleTitle.Width(m.width).Render("📋 tkan - Select Project Source")
+	sections = append(sections, title)
+
+	// Source options
+	var sourceLines []string
+	sourceLines = append(sourceLines, "")
+	sourceLines = append(sourceLines, styleDetailTitle.Render("Choose Project Source:"))
+	sourceLines = append(sourceLines, "")
+
+	options := []string{
+		"Local Projects (scan .tkan.yaml files)",
+		"GitHub Projects (your projects)",
+		"GitHub Projects (enter owner name)",
+		"Cancel",
+	}
+
+	for i, option := range options {
+		prefix := "   "
+		var style lipgloss.Style
+		if i == m.selectedSourceOpt {
+			prefix = " ▶ "
+			style = lipgloss.NewStyle().
+				Foreground(colorSelected).
+				Bold(true)
+		} else {
+			style = styleDetailValue
+		}
+
+		line := fmt.Sprintf("%s%s", prefix, option)
+		sourceLines = append(sourceLines, style.Render(line))
+	}
+
+	sourceLines = append(sourceLines, "")
+	sourceLines = append(sourceLines, styleSubdued.Render("↑/↓: Navigate | Enter: Select | Esc: Cancel"))
+
+	content := strings.Join(sourceLines, "\n")
+
+	// Center the content
+	contentStyle := lipgloss.NewStyle().
+		Width(m.width).
+		Height(m.height - 4).
+		Padding(2, 4)
+
+	sections = append(sections, contentStyle.Render(content))
+
+	// Status bar
+	status := styleStatus.Width(m.width).Render("Select a project source")
+	sections = append(sections, status)
+
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+}
+
+// renderGitHubOwnerInput renders the GitHub owner input form
+func (m Model) renderGitHubOwnerInput() string {
+	var formLines []string
+	formLines = append(formLines, styleDetailTitle.Render("Enter GitHub Owner"))
+	formLines = append(formLines, "")
+
+	// Render input
+	formLines = append(formLines, styleDetailLabel.Render("Owner/Organization:"))
+	if len(m.formInputs) > 0 {
+		formLines = append(formLines, m.formInputs[0].View())
+	}
+	formLines = append(formLines, "")
+
+	// Instructions
+	formLines = append(formLines, styleSubdued.Render("Enter: Load projects"))
+	formLines = append(formLines, styleSubdued.Render("Esc: Cancel"))
+
+	formContent := strings.Join(formLines, "\n")
+
+	// Style the form as a centered modal
+	formBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(colorPrimary).
+		Padding(1, 2).
+		Width(70).
+		Render(formContent)
+
+	// Center the form
+	centeredForm := lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Center,
+		formBox,
+	)
+
 	return centeredForm
 }

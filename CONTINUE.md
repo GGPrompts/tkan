@@ -1,6 +1,15 @@
 # tkan Development Continuation - GitHub Project Switching
 
-## Current Session Summary (2025-11-13)
+## ✅ RESOLVED - Feature Complete!
+
+The 'p' key is working correctly. Users can now switch between GitHub projects seamlessly.
+- Run: `./tkan --github-owner @me`
+- Navigate and select project with ↑/↓ and Enter
+- Press 'p' anytime to return to project list and switch projects
+
+---
+
+## Session Summary (2025-11-13)
 
 ### What We Built Today
 
@@ -13,13 +22,13 @@
 - ✅ Fixed duplicate divider
 - ✅ Centered cards within columns
 
-#### Session 2: GitHub Multi-Project Support (v0.5.1) 🔧 IN PROGRESS
+#### Session 2: GitHub Multi-Project Support (v0.5.1) ✅ COMPLETE
 - ✅ Added `--github-owner` flag to list all projects from an owner
 - ✅ Added `ListGitHubProjects()` function
 - ✅ Fixed JSON parsing for nested owner structure
 - ✅ Updated `loadSelectedProject()` to handle GitHub project paths
 - ✅ Fixed project list rendering (selected project width)
-- 🐛 **ISSUE**: 'p' key not working to return to project list
+- ✅ **VERIFIED**: 'p' key working correctly to switch between projects
 
 ## Current Problem
 

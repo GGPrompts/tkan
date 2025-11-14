@@ -23,11 +23,16 @@
 - ✅ **⌨️ Keyboard Navigation**: Full keyboard control (←→↑↓, vim keys)
 - ✅ **💾 YAML Persistence**: Plain text `.tkan.yaml` files
 - ✅ **🎯 Project Selector**: Choose from multiple projects with ↑/↓
+- ✅ **➕ Card Creation**: Press 'n' to create new cards with modal form
+- ✅ **✏️ Card Editing**: Press 'e' to edit existing cards
+- ✅ **🗑️ Card Deletion**: Press 'd' to delete cards
+- ✅ **❓ Help Screen**: Press '?' for complete keyboard reference
+- ✅ **🔧 GitHub Projects**: Optional GitHub Projects backend integration
 
 **Coming Soon:**
-- 📅 **Card Editing**: Create/edit/delete cards (Phase 2, partial)
 - 📅 **Table View**: Sortable data table view (Phase 3)
 - 📅 **Search/Filter**: Find cards by text, tags, assignee (Phase 3)
+- 📅 **Move Shortcut**: Keyboard shortcut to move cards (m key)
 
 ---
 
@@ -109,12 +114,23 @@ tkan
 - `q` - Quit
 
 ### Board View
+
+**Navigation:**
 - `←/→` or `h/l` - Navigate columns
 - `↑/↓` or `k/j` - Navigate cards
 - `g` - Jump to first column
 - `G` - Jump to last column
+
+**Card Actions:**
+- `n` - Create new card
+- `e` - Edit selected card
+- `d` - Delete selected card
+- `m` - Move card to column (coming soon)
+
+**Views & UI:**
 - `Tab` - Toggle detail panel
 - `a` - Toggle archive column visibility
+- `?` - Toggle help screen
 - `p` - Return to project list (if multiple projects)
 - `v` - Table view (coming in Phase 3)
 - `q` - Quit
@@ -124,12 +140,11 @@ tkan
 - **Visual Feedback** - Green line shows drop position, ghost card at source
 - **Precise Positioning** - Hover over top/bottom half of cards to insert before/after
 
-### Coming Soon (Phase 2, partial)
-- `n` - New card
-- `e` - Edit card
-- `d` - Delete card
-- `m` - Move card to column (keyboard alternative)
-- `/` - Search/filter
+### Form Controls (When Creating/Editing Cards)
+- `Tab` / `↑` / `↓` - Navigate between fields
+- `Enter` - Next field (or save on last field)
+- `Ctrl+S` / `Ctrl+Enter` - Save card
+- `Esc` - Cancel without saving
 
 ---
 
@@ -183,16 +198,17 @@ Built with proven patterns from:
 - [x] YAML persistence
 - [x] Archive toggle
 
-**Phase 2 - Interactions** ✅ COMPLETED (2025-10-28)
+**Phase 2 - Interactions** ✅ COMPLETED (2025-11-13)
 - [x] Drag & drop cards (Solitaire-style)
 - [x] Card reordering within columns
 - [x] Visual drop indicator (green line)
 - [x] Ghost card effect during drag
 - [x] Move cards across all columns (including DONE)
-- [ ] Card creation (pending)
-- [ ] Card editing (pending)
-- [ ] Card deletion (pending)
-- [ ] Move card keyboard shortcut (pending)
+- [x] Card creation with modal form
+- [x] Card editing with pre-filled form
+- [x] Card deletion
+- [x] Help screen with keyboard reference
+- [ ] Move card keyboard shortcut (m key) - coming soon
 
 **Phase 3 - Table View** 📅 PLANNED
 - [ ] Table view with sortable headers

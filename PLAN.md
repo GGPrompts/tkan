@@ -418,6 +418,57 @@ settings:
 ./tkan --github owner/7   # GitHub Project mode
 ```
 
+---
+
+### Phase 2.7: Card Management & UI Polish ✅ **COMPLETED - 2025-11-13**
+
+**Goal**: Implement core card CRUD operations and polish UI
+
+**What We Built**:
+- ✅ **Help Screen** - Press `?` for comprehensive keyboard reference
+- ✅ **Card Creation** - Press `n` to create cards with modal form
+- ✅ **Card Editing** - Press `e` to edit existing cards
+- ✅ **Card Deletion** - Press `d` to delete cards
+- ✅ **Form System** - Beautiful modal with textinput components
+  - Tab/↑/↓ navigation between fields
+  - Enter advances to next field (saves on last)
+  - Ctrl+S / Ctrl+Enter to save
+  - Esc to cancel
+- ✅ **UI Fixes**:
+  - Fixed column header alignment (removed extra padding)
+  - Fixed duplicate divider before detail panel
+  - Cards center-aligned within columns
+
+**Technical Implementation**:
+- Added `github.com/charmbracelet/bubbles/textinput` dependency
+- New types: `FormMode` enum (`FormNone`, `FormCreateCard`, `FormEditCard`)
+- Form state fields in Model: `formMode`, `formInputs`, `formFocusIndex`, `editingCardID`
+- Form management functions: `openCreateCardForm()`, `openEditCardForm()`, `saveCardForm()`, `closeCardForm()`
+- Help view mode: `ViewHelp` with toggle behavior
+- Card ID generation: `generateCardID()` using nanosecond timestamps
+- Modal overlay rendering with `lipgloss.Place()` for centering
+
+**Files Modified**:
+- types.go (FormMode, ViewHelp, form state fields)
+- model.go (form management, card CRUD, ID generation)
+- view.go (help screen, form modal overlay, alignment fixes)
+- update_keyboard.go (form input handling, help toggle)
+- styles.go (column header alignment)
+- go.mod/go.sum (bubbles dependency)
+
+**Phase 2 Status**: **100% Complete** 🎉
+- [x] Drag & drop cards
+- [x] Visual feedback (drop indicators, ghost cards)
+- [x] Card reordering within/across columns
+- [x] GitHub Projects backend
+- [x] Card creation
+- [x] Card editing
+- [x] Card deletion
+- [x] Help screen
+- [ ] Move card shortcut (m key) - deferred to Phase 3
+
+---
+
 ### Phase 3: Table View (Week 3) 📅 **UP NEXT**
 
 **Goal**: Implement TFE-style table view with sortable headers

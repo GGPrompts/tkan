@@ -2,6 +2,8 @@ package main
 
 import (
 	"time"
+
+	"github.com/charmbracelet/bubbles/textinput"
 )
 
 // Card represents a single task card
@@ -33,13 +35,23 @@ type Board struct {
 	ModifiedAt  time.Time `yaml:"modified_at"`
 }
 
-// ViewMode represents the current view (project list, board, or table)
+// ViewMode represents the current view (project list, board, table, or help)
 type ViewMode int
 
 const (
 	ViewProjectList ViewMode = iota
 	ViewBoard
 	ViewTable
+	ViewHelp
+)
+
+// FormMode represents the current form state
+type FormMode int
+
+const (
+	FormNone FormMode = iota // No form active
+	FormCreateCard           // Creating a new card
+	FormEditCard             // Editing an existing card
 )
 
 // Model is the Bubbletea model for the entire application
@@ -52,10 +64,11 @@ type Model struct {
 
 	// UI State
 	viewMode       ViewMode
-	selectedColumn int  // Which column is selected (0-4)
-	selectedCard   int  // Which card in the column is selected
-	showDetails    bool // Show detail panel
-	showArchive    bool // Show archive column
+	previousView   ViewMode // View to return to after help
+	selectedColumn int      // Which column is selected (0-4)
+	selectedCard   int      // Which card in the column is selected
+	showDetails    bool     // Show detail panel
+	showArchive    bool     // Show archive column
 	width          int
 	height         int
 
@@ -79,6 +92,12 @@ type Model struct {
 	// Drop target tracking (for visual feedback)
 	dropTargetColumn int // Column where card would be dropped (-1 if none)
 	dropTargetIndex  int // Position where card would be inserted
+
+	// Card form state (for creating/editing cards)
+	formMode      FormMode       // Whether we're creating or editing a card
+	formInputs    []textinput.Model // Text inputs for the form
+	formFocusIndex int            // Which input is currently focused
+	editingCardID string          // ID of card being edited (empty if creating)
 
 	// Double-click detection
 	lastClickTime time.Time

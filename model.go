@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -61,7 +63,7 @@ func (m *Model) calculateLayout() {
 	if m.showDetails {
 		// Detail panel visible: Board gets 67%, detail gets 33%
 		m.detailWidth = m.width / 3
-		m.boardWidth = m.width - m.detailWidth - 1 // -1 for divider
+		m.boardWidth = m.width - m.detailWidth // Detail panel border provides visual separation
 	} else {
 		// Detail panel hidden: Board gets 100%
 		m.boardWidth = m.width
@@ -460,4 +462,187 @@ func (m *Model) moveCard(fromColIndex, fromCardIndex, toColIndex, insertIndex in
 		// For local backend, save the entire board
 		m.backend.SaveBoard(m.board)
 	}
+}
+
+// openCreateCardForm opens the form for creating a new card
+func (m *Model) openCreateCardForm() {
+	m.formMode = FormCreateCard
+	m.editingCardID = ""
+	m.formFocusIndex = 0
+
+	// Create text inputs
+	titleInput := textinput.New()
+	titleInput.Placeholder = "Card title"
+	titleInput.Focus()
+	titleInput.CharLimit = 100
+	titleInput.Width = 60
+
+	descInput := textinput.New()
+	descInput.Placeholder = "Description (optional)"
+	descInput.CharLimit = 500
+	descInput.Width = 60
+
+	m.formInputs = []textinput.Model{titleInput, descInput}
+}
+
+// openEditCardForm opens the form for editing an existing card
+func (m *Model) openEditCardForm() {
+	card := m.getCurrentCard()
+	if card == nil {
+		return
+	}
+
+	m.formMode = FormEditCard
+	m.editingCardID = card.ID
+	m.formFocusIndex = 0
+
+	// Create text inputs pre-filled with card data
+	titleInput := textinput.New()
+	titleInput.Placeholder = "Card title"
+	titleInput.SetValue(card.Title)
+	titleInput.Focus()
+	titleInput.CharLimit = 100
+	titleInput.Width = 60
+
+	descInput := textinput.New()
+	descInput.Placeholder = "Description (optional)"
+	descInput.SetValue(card.Description)
+	descInput.CharLimit = 500
+	descInput.Width = 60
+
+	m.formInputs = []textinput.Model{titleInput, descInput}
+}
+
+// closeCardForm closes the card form without saving
+func (m *Model) closeCardForm() {
+	m.formMode = FormNone
+	m.formInputs = nil
+	m.editingCardID = ""
+}
+
+// saveCardForm saves the card form (create or edit)
+func (m *Model) saveCardForm() {
+	if len(m.formInputs) < 2 {
+		return
+	}
+
+	title := m.formInputs[0].Value()
+	description := m.formInputs[1].Value()
+
+	// Title is required
+	if title == "" {
+		return
+	}
+
+	if m.formMode == FormCreateCard {
+		// Create new card
+		col := m.getCurrentColumn()
+		if col == nil {
+			m.closeCardForm()
+			return
+		}
+
+		// Find the actual column in the board
+		var colPtr *Column
+		for i := range m.board.Columns {
+			if m.board.Columns[i].Name == col.Name {
+				colPtr = &m.board.Columns[i]
+				break
+			}
+		}
+
+		if colPtr == nil {
+			m.closeCardForm()
+			return
+		}
+
+		// Generate ID
+		id := generateCardID()
+
+		// Create card
+		now := time.Now()
+		newCard := &Card{
+			ID:          id,
+			Title:       title,
+			Description: description,
+			Column:      col.Name,
+			CreatedAt:   now,
+			ModifiedAt:  now,
+		}
+
+		// Add to column and board
+		colPtr.Cards = append(colPtr.Cards, newCard)
+		m.board.Cards = append(m.board.Cards, newCard)
+
+		// Select the new card
+		m.selectedCard = len(colPtr.Cards) - 1
+
+	} else if m.formMode == FormEditCard {
+		// Edit existing card
+		for _, card := range m.board.Cards {
+			if card.ID == m.editingCardID {
+				card.Title = title
+				card.Description = description
+				card.ModifiedAt = time.Now()
+				break
+			}
+		}
+	}
+
+	// Save changes
+	if m.backend != nil {
+		m.backend.SaveBoard(m.board)
+	}
+
+	m.closeCardForm()
+}
+
+// deleteCard deletes the currently selected card
+func (m *Model) deleteCard() {
+	col := m.getCurrentColumn()
+	if col == nil || m.selectedCard < 0 || m.selectedCard >= len(col.Cards) {
+		return // No card selected
+	}
+
+	// Get the card before removing it (for backend deletion)
+	card := col.Cards[m.selectedCard]
+
+	// Find the actual column in the board
+	var colPtr *Column
+	for i := range m.board.Columns {
+		if m.board.Columns[i].Name == col.Name {
+			colPtr = &m.board.Columns[i]
+			break
+		}
+	}
+
+	if colPtr == nil {
+		return
+	}
+
+	// Remove the card from the column
+	colPtr.Cards = append(colPtr.Cards[:m.selectedCard], colPtr.Cards[m.selectedCard+1:]...)
+
+	// Remove the card from the board's card list
+	for i, c := range m.board.Cards {
+		if c.ID == card.ID {
+			m.board.Cards = append(m.board.Cards[:i], m.board.Cards[i+1:]...)
+			break
+		}
+	}
+
+	// Adjust selected card index
+	if m.selectedCard >= len(colPtr.Cards) && m.selectedCard > 0 {
+		m.selectedCard--
+	}
+
+	// Save changes using backend
+	if m.backend != nil {
+		m.backend.SaveBoard(m.board)
+	}
+}
+
+// generateCardID generates a unique card ID
+func generateCardID() string {
+	return fmt.Sprintf("card_%d", time.Now().UnixNano())
 }

@@ -6,10 +6,27 @@ import (
 
 // handleKeyMsg handles keyboard input
 func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Handle form input first if form is open
+	if m.formMode != FormNone {
+		return m.handleFormKeyMsg(msg)
+	}
+
 	// Global shortcuts
 	switch msg.String() {
 	case "q", "ctrl+c":
 		return m, tea.Quit
+
+	case "?":
+		// Toggle help screen
+		if m.viewMode == ViewHelp {
+			// Return to previous view
+			m.viewMode = m.previousView
+		} else {
+			// Show help
+			m.previousView = m.viewMode
+			m.viewMode = ViewHelp
+		}
+		return m, nil
 
 	case "tab":
 		m.toggleDetails()
@@ -33,6 +50,8 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleBoardKeyMsg(msg)
 	case ViewTable:
 		return m.handleTableKeyMsg(msg)
+	case ViewHelp:
+		return m.handleHelpKeyMsg(msg)
 	}
 
 	return m, nil
@@ -115,17 +134,20 @@ func (m Model) handleBoardKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	// Future: These will be implemented in later phases
+	// Card creation and editing
 	case "n":
 		// New card
+		m.openCreateCardForm()
 		return m, nil
 
 	case "e":
 		// Edit card
+		m.openEditCardForm()
 		return m, nil
 
 	case "d":
 		// Delete card
+		m.deleteCard()
 		return m, nil
 
 	case "m":
@@ -134,10 +156,6 @@ func (m Model) handleBoardKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "/":
 		// Search/filter
-		return m, nil
-
-	case "?":
-		// Help
 		return m, nil
 	}
 
@@ -148,4 +166,85 @@ func (m Model) handleBoardKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) handleTableKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Not implemented in Phase 1
 	return m, nil
+}
+
+// handleHelpKeyMsg handles keyboard input for help view
+func (m Model) handleHelpKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc", "enter", " ":
+		// Return to previous view
+		m.viewMode = m.previousView
+		return m, nil
+	}
+
+	return m, nil
+}
+
+// handleFormKeyMsg handles keyboard input when card form is open
+func (m Model) handleFormKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	switch msg.String() {
+	case "esc":
+		// Cancel form
+		m.closeCardForm()
+		return m, nil
+
+	case "ctrl+s", "ctrl+enter":
+		// Save form
+		m.saveCardForm()
+		return m, nil
+
+	case "tab", "shift+tab", "up", "down":
+		// Navigate between form fields
+		if msg.String() == "tab" || msg.String() == "down" {
+			m.formFocusIndex++
+			if m.formFocusIndex >= len(m.formInputs) {
+				m.formFocusIndex = 0
+			}
+		} else {
+			m.formFocusIndex--
+			if m.formFocusIndex < 0 {
+				m.formFocusIndex = len(m.formInputs) - 1
+			}
+		}
+
+		// Update focus
+		for i := range m.formInputs {
+			if i == m.formFocusIndex {
+				m.formInputs[i].Focus()
+			} else {
+				m.formInputs[i].Blur()
+			}
+		}
+
+		return m, nil
+
+	case "enter":
+		// Enter on last field saves the form
+		if m.formFocusIndex == len(m.formInputs)-1 {
+			m.saveCardForm()
+			return m, nil
+		}
+		// Otherwise move to next field
+		m.formFocusIndex++
+		if m.formFocusIndex >= len(m.formInputs) {
+			m.formFocusIndex = 0
+		}
+		for i := range m.formInputs {
+			if i == m.formFocusIndex {
+				m.formInputs[i].Focus()
+			} else {
+				m.formInputs[i].Blur()
+			}
+		}
+		return m, nil
+	}
+
+	// Update the focused text input
+	if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
+		m.formInputs[m.formFocusIndex], cmd = m.formInputs[m.formFocusIndex].Update(msg)
+	}
+
+	return m, cmd
 }

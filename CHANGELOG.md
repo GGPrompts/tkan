@@ -1,5 +1,68 @@
 # tkan Changelog
 
+## v0.5.0 - 2025-11-13
+
+### Card Management & UI Polish
+
+**New Features:**
+- ✅ **Help Screen** - Press `?` to view comprehensive keyboard shortcuts and controls
+- ✅ **Card Creation** - Press `n` to create new cards with title and description
+- ✅ **Card Editing** - Press `e` to edit existing cards (title and description)
+- ✅ **Card Deletion** - Press `d` to delete selected cards
+- ✅ **Form Modal** - Beautiful centered modal for card creation/editing
+  - Tab/↑/↓ to navigate between fields
+  - Enter to move to next field (saves on last field)
+  - Ctrl+S or Ctrl+Enter to save
+  - Esc to cancel
+
+**UI Fixes:**
+- ✅ Fixed column header alignment (removed extra padding)
+- ✅ Fixed duplicate divider before detail panel
+- ✅ Cards now center-aligned within columns to match headers
+
+**Technical Details:**
+- Added `github.com/charmbracelet/bubbles/textinput` dependency
+- New form modes: `FormCreateCard`, `FormEditCard`
+- Form state management in Model
+- Unique card ID generation with nanosecond timestamps
+- Modal overlay rendering with centered placement
+
+**Keyboard Shortcuts Added:**
+- `?` - Toggle help screen
+- `n` - Create new card
+- `e` - Edit selected card
+- `d` - Delete selected card
+- In forms: Tab/Enter/Ctrl+S to navigate and save, Esc to cancel
+
+---
+
+## v0.4.0 - 2025-10-29
+
+### GitHub Projects Backend Integration
+
+**New Features:**
+- ✅ GitHub Projects (ProjectsV2) as alternative backend
+- ✅ `--github` flag to use GitHub Projects instead of local YAML
+- ✅ Real-time sync with GitHub web interface
+- ✅ Direct API integration via `gh` CLI
+
+**Usage:**
+```bash
+# Use local YAML files (default)
+./tkan
+
+# Use GitHub Project
+./tkan --github GGPrompts/7
+```
+
+**Technical Details:**
+- Backend abstraction interface
+- `GitHubBackend` implementation
+- Field ID mapping for status updates
+- See `CLAUDE.md` for GitHub integration guide
+
+---
+
 ## v0.3.0 - 2025-10-28
 
 ### Card Display Improvements (Solitaire-style)

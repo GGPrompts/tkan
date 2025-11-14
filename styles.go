@@ -63,15 +63,13 @@ var (
 	styleColumnHeader = lipgloss.NewStyle().
 				Foreground(colorPrimary).
 				Bold(true).
-				Align(lipgloss.Center).
-				Padding(0, 1)
+				Align(lipgloss.Center)
 
 	// Selected column header style
 	styleColumnHeaderSelected = lipgloss.NewStyle().
 					Foreground(colorSelected).
 					Bold(true).
-					Align(lipgloss.Center).
-					Padding(0, 1)
+					Align(lipgloss.Center)
 )
 
 // Card styles (12 chars wide × 5 lines tall - Solitaire-style)

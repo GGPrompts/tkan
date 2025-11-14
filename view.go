@@ -309,7 +309,8 @@ func (m Model) renderStatus() string {
 		if m.showArchive {
 			archiveStatus = "visible"
 		}
-		help = fmt.Sprintf("←/→: Columns | ↑/↓: Cards | Tab: Details | a: Archive (%s) | p: Projects | q: Quit", archiveStatus)
+		projectsDebug := fmt.Sprintf("[%d projects]", len(m.projects))
+		help = fmt.Sprintf("←/→: Columns | ↑/↓: Cards | Tab: Details | a: Archive (%s) | p: Projects %s | q: Quit", archiveStatus, projectsDebug)
 	default:
 		help = "q: Quit"
 	}
@@ -339,10 +340,15 @@ func (m Model) renderProjectListView() string {
 
 		// Format: [*] Project Name (path)
 		prefix := "   "
-		style := styleDetailValue
+		var style lipgloss.Style
 		if i == m.selectedProject {
 			prefix = " ▶ "
-			style = styleCardSelected
+			// Selected project style - no width constraint
+			style = lipgloss.NewStyle().
+				Foreground(colorSelected).
+				Bold(true)
+		} else {
+			style = styleDetailValue
 		}
 
 		line := fmt.Sprintf("%s%s", prefix, project.Name)

@@ -14,6 +14,7 @@ func main() {
 	// Parse command-line flags
 	var (
 		githubProject = flag.String("github", "", "Use GitHub Project (format: owner/project-number or owner/repo/project-number)")
+		githubOwner   = flag.String("github-owner", "", "List all GitHub Projects from owner (use @me for your own projects)")
 		help          = flag.Bool("help", false, "Show help")
 	)
 	flag.Parse()
@@ -21,12 +22,16 @@ func main() {
 	if *help {
 		fmt.Println("tkan - Terminal Kanban Board")
 		fmt.Println("\nUsage:")
-		fmt.Println("  tkan                    # Use local .tkan.yaml files")
-		fmt.Println("  tkan --github owner/1   # Use GitHub Project #1 from owner")
-		fmt.Println("  tkan --github owner/repo/1  # Use GitHub Project #1 from owner/repo")
+		fmt.Println("  tkan                       # Use local .tkan.yaml files")
+		fmt.Println("  tkan --github owner/1      # Use GitHub Project #1 from owner")
+		fmt.Println("  tkan --github owner/repo/1 # Use GitHub Project #1 from owner/repo")
+		fmt.Println("  tkan --github-owner owner  # List all GitHub projects from owner")
+		fmt.Println("  tkan --github-owner @me    # List all your GitHub projects")
 		fmt.Println("\nExamples:")
 		fmt.Println("  tkan --github matt/1")
 		fmt.Println("  tkan --github microsoft/vscode/2")
+		fmt.Println("  tkan --github-owner @me")
+		fmt.Println("  tkan --github-owner GGPrompts")
 		os.Exit(0)
 	}
 
@@ -34,7 +39,43 @@ func main() {
 	var board *Board
 	var projects []Project
 
-	if *githubProject != "" {
+	if *githubOwner != "" {
+		// List all GitHub projects from owner
+		ghProjects, err := ListGitHubProjects(*githubOwner)
+		if err != nil {
+			fmt.Printf("Error listing GitHub projects: %v\n", err)
+			fmt.Printf("\nMake sure you have:\n")
+			fmt.Printf("1. Authenticated with: gh auth login\n")
+			fmt.Printf("2. Added project scope: gh auth refresh -s project\n")
+			os.Exit(1)
+		}
+
+		if len(ghProjects) == 0 {
+			fmt.Printf("No GitHub projects found for owner: %s\n", *githubOwner)
+			os.Exit(1)
+		}
+
+		// Convert to Project format
+		for _, ghp := range ghProjects {
+			projects = append(projects, Project{
+				Name: fmt.Sprintf("GitHub: %s", ghp.Title),
+				Path: fmt.Sprintf("github:%s/%d", ghp.Owner, ghp.Number),
+				Dir:  fmt.Sprintf("GitHub (%s)", ghp.Owner),
+			})
+		}
+
+		// Don't load a board yet - let the user select from project list
+		// Create a dummy board for initialization
+		board = &Board{
+			Name:    "Select a project",
+			Columns: []Column{},
+			Cards:   []*Card{},
+		}
+
+		// Use a dummy backend (will be replaced when project is selected)
+		backend = NewLocalBackend(".tkan.yaml")
+
+	} else if *githubProject != "" {
 		// Parse GitHub project specification
 		parts := strings.Split(*githubProject, "/")
 		if len(parts) < 2 || len(parts) > 3 {

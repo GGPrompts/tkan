@@ -1,5 +1,40 @@
 # tkan Changelog
 
+## v0.5.1 - 2025-11-13
+
+### GitHub Projects Multi-Project Support
+
+**New Features:**
+- ✅ **List GitHub Projects** - `--github-owner` flag to list all projects from an owner
+- ✅ **Switch Between Projects** - Use 'p' key to switch between GitHub projects
+- ✅ **Dynamic Backend Switching** - Automatically switches backend when changing projects
+- ✅ **@me Support** - Use `@me` to list your own GitHub projects
+
+**Usage:**
+```bash
+# List all your GitHub projects (switchable with 'p')
+./tkan --github-owner @me
+
+# List projects from a specific owner
+./tkan --github-owner GGPrompts
+
+# Use a specific project (single project mode)
+./tkan --github GGPrompts/7
+```
+
+**Technical Details:**
+- Added `ListGitHubProjects()` function to scan GitHub projects
+- Updated `loadSelectedProject()` to handle GitHub project paths
+- GitHub projects stored in format: `github:owner/project-number`
+- Backend dynamically created when switching projects
+
+**Files Modified:**
+- backend_github.go: Added `ListGitHubProjects()` and `GitHubProjectInfo` type
+- main.go: Added `--github-owner` flag and multi-project support
+- model.go: Updated `loadSelectedProject()` to switch backends
+
+---
+
 ## v0.5.0 - 2025-11-13
 
 ### Card Management & UI Polish

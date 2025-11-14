@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -165,9 +166,38 @@ func (m *Model) loadSelectedProject() error {
 	}
 
 	project := m.projects[m.selectedProject]
-	board, err := LoadBoard(project.Path)
-	if err != nil {
-		return err
+
+	var board *Board
+	var err error
+
+	// Check if this is a GitHub project
+	if strings.HasPrefix(project.Path, "github:") {
+		// Parse GitHub project path: github:owner/project-number
+		pathParts := strings.TrimPrefix(project.Path, "github:")
+		parts := strings.Split(pathParts, "/")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid GitHub project path: %s", project.Path)
+		}
+
+		owner := parts[0]
+		projectNum := 0
+		if _, err := fmt.Sscanf(parts[1], "%d", &projectNum); err != nil {
+			return fmt.Errorf("invalid project number in path: %s", parts[1])
+		}
+
+		// Create new GitHub backend
+		m.backend = NewGitHubBackend(owner, projectNum, "")
+		board, err = m.backend.LoadBoard()
+		if err != nil {
+			return err
+		}
+	} else {
+		// Local YAML project
+		m.backend = NewLocalBackend(project.Path)
+		board, err = m.backend.LoadBoard()
+		if err != nil {
+			return err
+		}
 	}
 
 	m.board = board

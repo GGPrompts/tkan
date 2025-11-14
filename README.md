@@ -89,20 +89,36 @@ sudo mv tkan /usr/local/bin/
 ### Usage
 
 ```bash
-# Start tkan (scans current directory for .tkan.yaml files)
+# Local YAML files (scans current directory for .tkan.yaml files)
 tkan
 
+# Use a specific GitHub Project
+tkan --github owner/project-number
+tkan --github GGPrompts/7
+
+# List all GitHub Projects from an owner (use 'p' to switch between them)
+tkan --github-owner owner
+tkan --github-owner @me           # Your own projects
+tkan --github-owner GGPrompts     # Projects from GGPrompts
+
 # If no board found, creates .tkan.yaml with sample cards
-# If multiple projects found, shows project selector
+# If multiple projects found, shows project selector (press 'p' to switch)
 ```
 
 ### First Time Setup
 
+**Local YAML:**
 1. Navigate to your project directory: `cd ~/projects/myapp`
 2. Run: `tkan`
 3. tkan will create `.tkan.yaml` in the project root
 4. Start adding cards with `n` key
 5. Drag cards between columns or press `v` for table view
+
+**GitHub Projects:**
+1. Authenticate: `gh auth login`
+2. Add project scope: `gh auth refresh -s project`
+3. Run: `tkan --github-owner @me`
+4. Use 'p' key to switch between your projects
 
 ---
 

@@ -32,6 +32,61 @@ func NewGitHubBackend(owner string, projectNum int, repoName string) *GitHubBack
 	}
 }
 
+// GitHubProjectInfo represents a GitHub project from the list
+type GitHubProjectInfo struct {
+	Number int    `json:"number"`
+	Title  string `json:"title"`
+	Owner  string `json:"owner"`
+}
+
+// ListGitHubProjects lists all GitHub projects accessible to the current user
+func ListGitHubProjects(owner string) ([]GitHubProjectInfo, error) {
+	// Use gh CLI to list projects
+	var cmd *exec.Cmd
+	if owner != "" {
+		cmd = exec.Command("gh", "project", "list", "--owner", owner, "--format", "json", "--limit", "100")
+	} else {
+		cmd = exec.Command("gh", "project", "list", "--owner", "@me", "--format", "json", "--limit", "100")
+	}
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list projects: %v (output: %s)", err, string(output))
+	}
+
+	// Parse JSON output
+	var rawProjects struct {
+		Projects []struct {
+			Number int    `json:"number"`
+			Title  string `json:"title"`
+			Owner  struct {
+				Login string `json:"login"`
+			} `json:"owner"`
+		} `json:"projects"`
+	}
+
+	if err := json.Unmarshal(output, &rawProjects); err != nil {
+		return nil, fmt.Errorf("failed to parse project list: %v", err)
+	}
+
+	// Convert to our format
+	projects := make([]GitHubProjectInfo, 0, len(rawProjects.Projects))
+	for _, p := range rawProjects.Projects {
+		// Use the actual owner login from the response
+		actualOwner := p.Owner.Login
+		if actualOwner == "" {
+			actualOwner = owner // Fallback to provided owner if not in response
+		}
+		projects = append(projects, GitHubProjectInfo{
+			Number: p.Number,
+			Title:  p.Title,
+			Owner:  actualOwner,
+		})
+	}
+
+	return projects, nil
+}
+
 // LoadBoard fetches the project from GitHub and converts to our Board format
 func (g *GitHubBackend) LoadBoard() (*Board, error) {
 	// First, get project info

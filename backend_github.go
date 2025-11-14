@@ -110,10 +110,17 @@ func (g *GitHubBackend) LoadBoard() (*Board, error) {
 	if desc, ok := projectInfo["shortDescription"].(string); ok {
 		boardDesc = desc
 	}
-	
+
+	// Construct GitHub project URL
+	// Format: https://github.com/users/OWNER/projects/NUM (for users)
+	//     or: https://github.com/orgs/OWNER/projects/NUM (for orgs)
+	// We'll default to users, but both formats work
+	boardURL := fmt.Sprintf("https://github.com/users/%s/projects/%d", g.owner, g.projectNum)
+
 	board := &Board{
 		Name:        boardName,
 		Description: boardDesc,
+		URL:         boardURL,
 		Columns: []Column{
 			{Name: "BACKLOG"},
 			{Name: "TODO"},
@@ -284,6 +291,11 @@ func (g *GitHubBackend) itemToCard(item GitHubProjectItem) *Card {
 	}
 	if body, ok := item.Content["body"].(string); ok {
 		card.Description = body
+	}
+
+	// Extract URL (for issues/PRs linked to the item)
+	if url, ok := item.Content["url"].(string); ok {
+		card.URL = url
 	}
 
 	// Map Status field to our Column

@@ -34,6 +34,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.ready = true
 		m.calculateLayout()
+		// Rebuild table if in table view
+		if m.viewMode == ViewTable && m.table != nil {
+			m.buildTable()
+		}
 		return m, nil
 
 	case boardLoadedMsg:

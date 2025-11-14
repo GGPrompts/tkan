@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/76creates/stickers/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -517,7 +518,15 @@ func (m *Model) openCreateCardForm() {
 
 // openEditCardForm opens the form for editing an existing card
 func (m *Model) openEditCardForm() {
-	card := m.getCurrentCard()
+	var card *Card
+
+	// Get card based on current view
+	if m.viewMode == ViewTable {
+		card = m.getSelectedCardInTable()
+	} else {
+		card = m.getCurrentCard()
+	}
+
 	if card == nil {
 		return
 	}
@@ -622,6 +631,11 @@ func (m *Model) saveCardForm() {
 	// Save changes
 	if m.backend != nil {
 		m.backend.SaveBoard(m.board)
+	}
+
+	// Rebuild table if in table view
+	if m.viewMode == ViewTable {
+		m.buildTable()
 	}
 
 	m.closeCardForm()
@@ -764,4 +778,66 @@ func (m *Model) openGitHubOwnerInput() (tea.Model, tea.Cmd) {
 	m.formFocusIndex = 0
 
 	return m, nil
+}
+
+// buildTable creates or rebuilds the table from board data
+func (m *Model) buildTable() {
+	headers := []string{"Title", "Column", "Assignee", "Due Date", "Created", "Modified"}
+
+	// Create table if it doesn't exist
+	if m.table == nil {
+		m.table = table.NewTable(m.width, m.height-10, headers) // Leave room for info box
+		// Set column ratios (Title gets more space)
+		m.table.SetRatio([]int{3, 1, 1, 1, 1, 1})
+		m.table.SetMinWidth([]int{20, 10, 10, 10, 10, 10})
+	} else {
+		// Clear existing rows
+		m.table = table.NewTable(m.width, m.height-10, headers) // Leave room for info box
+		m.table.SetRatio([]int{3, 1, 1, 1, 1, 1})
+		m.table.SetMinWidth([]int{20, 10, 10, 10, 10, 10})
+	}
+
+	// Build rows from all cards and track card index
+	rows := make([][]any, 0, len(m.board.Cards))
+	m.tableCardIndex = make([]*Card, 0, len(m.board.Cards))
+
+	for _, card := range m.board.Cards {
+		// Skip archived cards if archive is hidden
+		if !m.showArchive && card.Column == "ARCHIVE" {
+			continue
+		}
+
+		row := []any{
+			card.Title,
+			card.Column,
+			card.Assignee,
+			card.DueDate,
+			card.CreatedAt.Format("2006-01-02"),
+			card.ModifiedAt.Format("2006-01-02"),
+		}
+		rows = append(rows, row)
+		m.tableCardIndex = append(m.tableCardIndex, card)
+	}
+
+	// Add rows to table
+	if len(rows) > 0 {
+		m.table.AddRows(rows)
+	}
+
+	// Update table dimensions
+	m.table.SetWidth(m.width)
+	m.table.SetHeight(m.height - 10) // Leave room for title, status bars, and info box
+}
+
+// getSelectedCardInTable returns the currently selected card in table view
+func (m Model) getSelectedCardInTable() *Card {
+	if m.table == nil || len(m.tableCardIndex) == 0 {
+		return nil
+	}
+
+	_, y := m.table.GetCursorLocation()
+	if y >= 0 && y < len(m.tableCardIndex) {
+		return m.tableCardIndex[y]
+	}
+	return nil
 }

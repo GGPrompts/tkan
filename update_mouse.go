@@ -8,11 +8,19 @@ import (
 
 // handleMouseMsg handles mouse input
 func (m Model) handleMouseMsg(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	// Only handle mouse in board view
-	if m.viewMode != ViewBoard {
+	// Handle mouse based on view mode
+	switch m.viewMode {
+	case ViewBoard:
+		return m.handleBoardMouseMsg(msg)
+	case ViewTable:
+		return m.handleTableMouseMsg(msg)
+	default:
 		return m, nil
 	}
+}
 
+// handleBoardMouseMsg handles mouse input for board view
+func (m Model) handleBoardMouseMsg(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	switch msg.Button {
 	case tea.MouseButtonLeft:
 		if msg.Action == tea.MouseActionPress {
@@ -27,6 +35,31 @@ func (m Model) handleMouseMsg(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 		// Mouse motion without button - update drop target if dragging
 		if msg.Action == tea.MouseActionMotion && m.draggingCard != nil {
 			return m.handleMouseMotion(msg)
+		}
+	}
+
+	return m, nil
+}
+
+// handleTableMouseMsg handles mouse input for table view
+func (m Model) handleTableMouseMsg(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
+	if m.table == nil {
+		return m, nil
+	}
+
+	switch msg.Button {
+	case tea.MouseButtonWheelUp:
+		m.table.CursorUp()
+		return m, nil
+
+	case tea.MouseButtonWheelDown:
+		m.table.CursorDown()
+		return m, nil
+
+	case tea.MouseButtonLeft:
+		if msg.Action == tea.MouseActionPress {
+			// TODO: Implement click-to-select row and column header click-to-sort
+			// For now, we'll just use keyboard navigation
 		}
 	}
 

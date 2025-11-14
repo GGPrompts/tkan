@@ -11,6 +11,11 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleFormKeyMsg(msg)
 	}
 
+	// Handle delete confirmation
+	if m.confirmingDelete {
+		return m.handleDeleteConfirmation(msg)
+	}
+
 	// Global shortcuts
 	switch msg.String() {
 	case "q", "ctrl+c":
@@ -36,7 +41,8 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Toggle view mode (board <-> table)
 		if m.viewMode == ViewBoard {
 			m.viewMode = ViewTable
-		} else {
+			m.buildTable() // Build table when switching to table view
+		} else if m.viewMode == ViewTable {
 			m.viewMode = ViewBoard
 		}
 		return m, nil
@@ -153,8 +159,12 @@ func (m Model) handleBoardKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "d":
-		// Delete card
-		m.deleteCard()
+		// Show delete confirmation
+		card := m.getCurrentCard()
+		if card != nil {
+			m.confirmingDelete = true
+			m.deletingCardID = card.ID
+		}
 		return m, nil
 
 	case "m":
@@ -169,9 +179,80 @@ func (m Model) handleBoardKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleTableKeyMsg handles keyboard input for table view (Phase 2)
+// handleTableKeyMsg handles keyboard input for table view
 func (m Model) handleTableKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// Not implemented in Phase 1
+	// Make sure table exists
+	if m.table == nil {
+		return m, nil
+	}
+
+	switch msg.String() {
+	// Navigation
+	case "up", "k":
+		m.table.CursorUp()
+		return m, nil
+
+	case "down", "j":
+		m.table.CursorDown()
+		return m, nil
+
+	case "left", "h":
+		m.table.CursorLeft()
+		return m, nil
+
+	case "right", "l":
+		m.table.CursorRight()
+		return m, nil
+
+	// Sorting
+	case "ctrl+s":
+		x, _ := m.table.GetCursorLocation()
+		_, order := m.table.GetOrder()
+		if order == 1 { // Ascending
+			m.table.OrderByDesc(x)
+		} else {
+			m.table.OrderByAsc(x)
+		}
+		return m, nil
+
+	// Toggle archive
+	case "a":
+		m.toggleArchive()
+		m.buildTable() // Rebuild table with new filter
+		return m, nil
+
+	// Edit selected card
+	case "e":
+		m.openEditCardForm()
+		return m, nil
+
+	// Delete selected card - show confirmation
+	case "d":
+		card := m.getSelectedCardInTable()
+		if card != nil {
+			m.confirmingDelete = true
+			m.deletingCardID = card.ID
+		}
+		return m, nil
+
+	// Filter (typing alphanumerics)
+	default:
+		if len(msg.String()) == 1 {
+			r := msg.Runes[0]
+			// Check if it's alphanumeric
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+				m.handleTableFilter(msg.String())
+				return m, nil
+			}
+		}
+
+		// Backspace for filter
+		if msg.String() == "backspace" {
+			m.handleTableFilter(msg.String())
+			return m, nil
+		}
+	}
+
 	return m, nil
 }
 
@@ -314,4 +395,96 @@ func (m Model) handleProjectSourceKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+// handleTableFilter handles filtering in table view
+func (m *Model) handleTableFilter(key string) {
+	i, s := m.table.GetFilter()
+	x, _ := m.table.GetCursorLocation()
+
+	// If we're on a different column, start fresh
+	if x != i && key != "backspace" {
+		m.table.SetFilter(x, key)
+		return
+	}
+
+	// Handle backspace
+	if key == "backspace" {
+		if len(s) == 1 {
+			m.table.UnsetFilter()
+			return
+		} else if len(s) > 1 {
+			s = s[0 : len(s)-1]
+		} else {
+			return
+		}
+	} else {
+		// Append character to filter
+		s = s + key
+	}
+
+	m.table.SetFilter(i, s)
+}
+
+// handleDeleteConfirmation handles keyboard input when showing delete confirmation
+func (m Model) handleDeleteConfirmation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "y", "Y":
+		// Confirm delete
+		m.confirmDelete()
+		m.confirmingDelete = false
+		m.deletingCardID = ""
+		return m, nil
+
+	case "n", "N", "esc":
+		// Cancel delete
+		m.confirmingDelete = false
+		m.deletingCardID = ""
+		return m, nil
+	}
+
+	return m, nil
+}
+
+// confirmDelete actually deletes the card after confirmation
+func (m *Model) confirmDelete() {
+	if m.deletingCardID == "" {
+		return
+	}
+
+	// Find and delete the card from the board
+	for i, c := range m.board.Cards {
+		if c.ID == m.deletingCardID {
+			m.board.Cards = append(m.board.Cards[:i], m.board.Cards[i+1:]...)
+			break
+		}
+	}
+
+	// Remove from columns
+	for i := range m.board.Columns {
+		for j, c := range m.board.Columns[i].Cards {
+			if c.ID == m.deletingCardID {
+				m.board.Columns[i].Cards = append(m.board.Columns[i].Cards[:j], m.board.Columns[i].Cards[j+1:]...)
+				break
+			}
+		}
+	}
+
+	// Save changes
+	if m.backend != nil {
+		m.backend.SaveBoard(m.board)
+	}
+
+	// Rebuild table if in table view
+	if m.viewMode == ViewTable {
+		m.buildTable()
+	}
+
+	// Adjust selection if in board view
+	if m.viewMode == ViewBoard {
+		col := m.getCurrentColumn()
+		if col != nil && m.selectedCard >= len(col.Cards) && m.selectedCard > 0 {
+			m.selectedCard--
+		}
+	}
 }

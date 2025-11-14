@@ -8,6 +8,16 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// makeHyperlink creates a terminal hyperlink using OSC 8 escape sequences
+// Supported by modern terminals like iTerm2, Windows Terminal, etc.
+func makeHyperlink(url, text string) string {
+	if url == "" {
+		return text
+	}
+	// OSC 8 format: \033]8;;URL\033\\TEXT\033]8;;\033\\
+	return fmt.Sprintf("\033]8;;%s\033\\%s\033]8;;\033\\", url, text)
+}
+
 // View renders the entire application UI (required by Bubbletea)
 func (m Model) View() string {
 	if !m.ready {
@@ -26,7 +36,7 @@ func (m Model) View() string {
 	case ViewBoard:
 		return m.renderBoardView()
 	case ViewTable:
-		return "Table view (not implemented in Phase 1)"
+		return m.renderTableView()
 	case ViewHelp:
 		return m.renderHelpView()
 	case ViewProjectSource:
@@ -54,6 +64,11 @@ func (m Model) renderBoardView() string {
 
 	boardView := lipgloss.JoinVertical(lipgloss.Left, sections...)
 
+	// Render delete confirmation overlay if confirming
+	if m.confirmingDelete {
+		return m.renderDeleteConfirmation(boardView)
+	}
+
 	// Render form overlay if form is open
 	if m.formMode != FormNone {
 		return m.renderFormOverlay(boardView)
@@ -65,6 +80,12 @@ func (m Model) renderBoardView() string {
 // renderTitle renders the title bar
 func (m Model) renderTitle() string {
 	boardName := m.board.Name
+
+	// Make board name clickable if URL is available
+	if m.board.URL != "" {
+		boardName = makeHyperlink(m.board.URL, boardName)
+	}
+
 	viewLabel := "Board View"
 
 	title := fmt.Sprintf("📋 tkan - %s", boardName)
@@ -286,6 +307,11 @@ func (m Model) renderDetailPanel() string {
 		details = append(details, styleDetailLabel.Render("Due: ")+styleDetailValue.Render(card.DueDate))
 	}
 
+	// URL
+	if card.URL != "" {
+		details = append(details, styleDetailLabel.Render("URL: ")+styleSubdued.Render(card.URL))
+	}
+
 	// Timestamps
 	details = append(details, "")
 	details = append(details, styleDetailLabel.Render("Created: ")+styleDetailValue.Render(card.CreatedAt.Format("Jan 2, 2006")))
@@ -311,7 +337,7 @@ func (m Model) renderStatus() string {
 		if m.showArchive {
 			archiveStatus = "visible"
 		}
-		help = fmt.Sprintf("←/→: Columns | ↑/↓: Cards | Tab: Details | a: Archive (%s) | p: Projects | q: Quit", archiveStatus)
+		help = fmt.Sprintf("←/→: Columns | ↑/↓: Cards | e: Edit | d: Delete | Tab: Details | a: Archive (%s) | p: Projects | q: Quit", archiveStatus)
 	default:
 		help = "q: Quit"
 	}
@@ -435,11 +461,21 @@ ACTIONS
   Mouse drag     Drag & drop cards between columns
 
 VIEWS
-  Tab            Toggle detail panel
-  v              Switch to table view (not yet implemented)
+  Tab            Toggle detail panel (board view only)
+  v              Toggle between board and table views
   a              Toggle archive column visibility
   p              Back to project list (if multiple projects)
   ?              Toggle this help screen
+
+TABLE VIEW
+  ↑/↓ or k/j     Navigate rows
+  ←/→ or h/l     Navigate columns
+  e              Edit selected card
+  d              Delete selected card
+  Ctrl+S         Sort by current column (toggle asc/desc)
+  Type letters   Filter current column
+  Backspace      Clear filter
+  Mouse wheel    Scroll table
 
 SEARCH & FILTER
   /              Search/filter cards (not yet implemented)
@@ -466,6 +502,57 @@ Press ? or Esc or Enter or Space to close this help screen`
 	sections = append(sections, status)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+}
+
+// renderDeleteConfirmation renders the delete confirmation dialog as an overlay
+func (m Model) renderDeleteConfirmation(background string) string {
+	// Find the card title to show in confirmation
+	var cardTitle string
+	for _, card := range m.board.Cards {
+		if card.ID == m.deletingCardID {
+			cardTitle = card.Title
+			break
+		}
+	}
+
+	// Build confirmation message
+	var confirmLines []string
+	confirmLines = append(confirmLines, styleDetailTitle.Render("Delete Card?"))
+	confirmLines = append(confirmLines, "")
+	if cardTitle != "" {
+		confirmLines = append(confirmLines, styleDetailLabel.Render("Card: ")+cardTitle)
+		confirmLines = append(confirmLines, "")
+	}
+	confirmLines = append(confirmLines, styleSubdued.Render("This action cannot be undone."))
+	confirmLines = append(confirmLines, "")
+
+	// Colorized prompt with green Y and red N
+	yStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#50fa7b")).Bold(true) // Green
+	nStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#ff5555")).Bold(true) // Red
+	confirmLines = append(confirmLines, styleDetailLabel.Render("Press ")+yStyle.Render("Y")+styleDetailLabel.Render(" to confirm, ")+nStyle.Render("N")+styleDetailLabel.Render(" or Esc to cancel"))
+
+	confirmContent := strings.Join(confirmLines, "\n")
+
+	// Style the confirmation as a centered modal with background
+	confirmBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#ff5555")). // Red border for warning
+		Background(lipgloss.Color("#1e1e1e")). // Dark background so it stands out
+		Padding(1, 2).
+		Width(60).
+		Render(confirmContent)
+
+	// Place overlay on top of background (simple replacement approach like form)
+	// This is simpler than trying to overlay - just replace the view
+	centeredConfirm := lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Center,
+		confirmBox,
+	)
+
+	return centeredConfirm
 }
 
 // renderFormOverlay renders the card creation/editing form as an overlay
@@ -622,4 +709,116 @@ func (m Model) renderGitHubOwnerInput() string {
 	)
 
 	return centeredForm
+}
+
+// renderTableView renders the table view
+func (m Model) renderTableView() string {
+	var sections []string
+
+	// Title bar
+	boardName := m.board.Name
+
+	// Make board name clickable if URL is available
+	if m.board.URL != "" {
+		boardName = makeHyperlink(m.board.URL, boardName)
+	}
+
+	viewLabel := "Table View"
+	title := fmt.Sprintf("📋 tkan - %s", boardName)
+	titleStyle := styleTitle.Width(m.width)
+	sections = append(sections, titleStyle.Render(title+strings.Repeat(" ", m.width-len(title)-10)+viewLabel))
+
+	// Render table if it exists
+	if m.table != nil {
+		sections = append(sections, m.table.Render())
+	} else {
+		sections = append(sections, "No data to display")
+	}
+
+	// Info box showing selected card details
+	infoBox := m.renderTableInfoBox()
+	sections = append(sections, infoBox)
+
+	// Status bar
+	archiveStatus := "hidden"
+	if m.showArchive {
+		archiveStatus = "visible"
+	}
+	help := fmt.Sprintf("↑/↓: Navigate | e: Edit | d: Delete | Ctrl+S: Sort | a: Archive (%s) | v: Board View | q: Quit", archiveStatus)
+	status := styleStatus.Width(m.width).Render(help)
+	sections = append(sections, status)
+
+	tableView := lipgloss.JoinVertical(lipgloss.Left, sections...)
+
+	// Render delete confirmation overlay if confirming
+	if m.confirmingDelete {
+		return m.renderDeleteConfirmation(tableView)
+	}
+
+	// Render form overlay if form is open
+	if m.formMode != FormNone {
+		return m.renderFormOverlay(tableView)
+	}
+
+	return tableView
+}
+
+// renderTableInfoBox renders the info box showing selected card details
+func (m Model) renderTableInfoBox() string {
+	card := m.getSelectedCardInTable()
+
+	if card == nil {
+		emptyMsg := styleSubdued.Render("No card selected")
+		return lipgloss.NewStyle().
+			Width(m.width).
+			Height(4).
+			Padding(0, 1).
+			Render(emptyMsg)
+	}
+
+	var lines []string
+
+	// Description
+	if card.Description != "" {
+		lines = append(lines, styleDetailLabel.Render("Description: ")+card.Description)
+	} else {
+		lines = append(lines, styleSubdued.Render("No description"))
+	}
+
+	// Tags
+	if len(card.Tags) > 0 {
+		tagStr := styleDetailLabel.Render("Tags: ")
+		for _, tag := range card.Tags {
+			tagStr += styleTag.Render("#"+tag) + " "
+		}
+		lines = append(lines, tagStr)
+	}
+
+	// Additional info on one line
+	infoLine := ""
+	if card.Assignee != "" {
+		infoLine += styleDetailLabel.Render("Assignee: ") + card.Assignee + "  "
+	}
+	if card.DueDate != "" {
+		infoLine += styleDetailLabel.Render("Due: ") + card.DueDate
+	}
+	if infoLine != "" {
+		lines = append(lines, infoLine)
+	}
+
+	// URL (if available)
+	if card.URL != "" {
+		lines = append(lines, styleDetailLabel.Render("URL: ")+styleSubdued.Render(card.URL))
+	}
+
+	content := strings.Join(lines, "\n")
+
+	return lipgloss.NewStyle().
+		Width(m.width).
+		Height(4).
+		Padding(0, 1).
+		BorderTop(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(colorSubdued).
+		Render(content)
 }

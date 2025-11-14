@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/76creates/stickers/table"
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
@@ -14,6 +15,7 @@ type Card struct {
 	Tags        []string  `yaml:"tags,omitempty"`
 	Assignee    string    `yaml:"assignee,omitempty"`
 	DueDate     string    `yaml:"due_date,omitempty"`
+	URL         string    `yaml:"url,omitempty"` // Link to GitHub issue/PR or external URL
 	CreatedAt   time.Time `yaml:"created_at"`
 	ModifiedAt  time.Time `yaml:"modified_at"`
 	Column      string    `yaml:"column"` // Which column this card belongs to
@@ -29,6 +31,7 @@ type Column struct {
 type Board struct {
 	Name        string    `yaml:"name"`
 	Description string    `yaml:"description,omitempty"`
+	URL         string    `yaml:"url,omitempty"` // Link to GitHub project or external URL
 	Columns     []Column  `yaml:"columns"`
 	Cards       []*Card   `yaml:"cards"`
 	CreatedAt   time.Time `yaml:"created_at"`
@@ -74,6 +77,10 @@ type Model struct {
 	width             int
 	height            int
 
+	// Table view
+	table          *table.Table // Table component for table view
+	tableCardIndex []*Card      // Maps table row index to card (for edit/delete operations)
+
 	// Layout (calculated from width/height)
 	boardWidth  int // Width of the board area (67% when details shown, 100% when hidden)
 	detailWidth int // Width of detail panel (33% when shown, 0 when hidden)
@@ -100,6 +107,10 @@ type Model struct {
 	formInputs    []textinput.Model // Text inputs for the form
 	formFocusIndex int            // Which input is currently focused
 	editingCardID string          // ID of card being edited (empty if creating)
+
+	// Delete confirmation
+	confirmingDelete bool   // Whether we're showing delete confirmation
+	deletingCardID   string // ID of card pending deletion
 
 	// Double-click detection
 	lastClickTime time.Time
